@@ -76,66 +76,64 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
     setLoading(true)
     setError('')
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { router.push('/login'); return }
 
-    const { data: registro, error: regError } = await supabase
-      .from('registros')
-      .insert({
-        obra_id: obraId,
-        user_id: user.id,
-        data,
-        clima: clima || null,
-        temperatura: temperatura ? parseInt(temperatura) : null,
-        descricao: descricao || null,
-      })
-      .select()
-      .single()
+      const { data: registro, error: regError } = await supabase
+        .from('registros')
+        .insert({
+          obra_id: obraId,
+          user_id: session.user.id,
+          data,
+          clima: clima || null,
+          temperatura: temperatura ? parseInt(temperatura) : null,
+          descricao: descricao || null,
+        })
+        .select()
+        .single()
 
-    if (regError) {
-      setError('Erro ao salvar registro.')
-      setLoading(false)
-      return
-    }
+      if (regError) throw new Error(regError.message)
 
-    // Upload fotos
-    for (const foto of fotos) {
-      const ext = foto.file.name.split('.').pop()
-      const path = `${user.id}/${registro.id}/${Date.now()}.${ext}`
-      const { data: upload } = await supabase.storage.from('fotos').upload(path, foto.file)
-      if (upload) {
-        const { data: { publicUrl } } = supabase.storage.from('fotos').getPublicUrl(path)
-        await supabase.from('fotos').insert({ registro_id: registro.id, url: publicUrl })
+      for (const foto of fotos) {
+        const ext = foto.file.name.split('.').pop()
+        const path = `${session.user.id}/${registro.id}/${Date.now()}.${ext}`
+        const { data: upload } = await supabase.storage.from('fotos').upload(path, foto.file)
+        if (upload) {
+          const { data: { publicUrl } } = supabase.storage.from('fotos').getPublicUrl(path)
+          await supabase.from('fotos').insert({ registro_id: registro.id, url: publicUrl })
+        }
       }
-    }
 
-    // Equipe
-    const equipeValida = equipe.filter(w => w.nome.trim())
-    if (equipeValida.length > 0) {
-      await supabase.from('equipe_dia').insert(
-        equipeValida.map(w => ({
-          registro_id: registro.id,
-          nome: w.nome,
-          funcao: w.funcao || null,
-          horas: w.horas ? parseFloat(w.horas) : null,
-        }))
-      )
-    }
+      const equipeValida = equipe.filter(w => w.nome.trim())
+      if (equipeValida.length > 0) {
+        await supabase.from('equipe_dia').insert(
+          equipeValida.map(w => ({
+            registro_id: registro.id,
+            nome: w.nome,
+            funcao: w.funcao || null,
+            horas: w.horas ? parseFloat(w.horas) : null,
+          }))
+        )
+      }
 
-    // Ocorrências
-    const ocorrValidas = ocorrencias.filter(o => o.descricao.trim())
-    if (ocorrValidas.length > 0) {
-      await supabase.from('ocorrencias').insert(
-        ocorrValidas.map(o => ({
-          registro_id: registro.id,
-          descricao: o.descricao,
-          tipo: o.tipo,
-          severidade: o.severidade,
-        }))
-      )
-    }
+      const ocorrValidas = ocorrencias.filter(o => o.descricao.trim())
+      if (ocorrValidas.length > 0) {
+        await supabase.from('ocorrencias').insert(
+          ocorrValidas.map(o => ({
+            registro_id: registro.id,
+            descricao: o.descricao,
+            tipo: o.tipo,
+            severidade: o.severidade,
+          }))
+        )
+      }
 
-    router.push(`/obras/${obraId}`)
+      router.push(`/obras/${obraId}`)
+    } catch (err: any) {
+      setError(err.message || 'Erro ao salvar registro. Tente novamente.')
+      setLoading(false)
+    }
   }
 
   return (

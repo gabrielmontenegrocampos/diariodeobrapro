@@ -32,31 +32,33 @@ export default function NovaObraPage() {
     setLoading(true)
     setError('')
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { router.push('/login'); return }
 
-    let fotoCapa: string | null = null
+      const { data: obraData, error: obraError } = await supabase
+        .from('obras')
+        .insert({ user_id: session.user.id, nome, endereco: endereco || null, data_inicio: dataInicio || null, status: 'ativa' })
+        .select()
+        .single()
 
-    const { data: obraData, error: obraError } = await supabase
-      .from('obras')
-      .insert({ user_id: user.id, nome, endereco: endereco || null, data_inicio: dataInicio || null, status: 'ativa' })
-      .select()
-      .single()
+      if (obraError) throw new Error(obraError.message)
 
-    if (obraError) { setError('Erro ao criar obra.'); setLoading(false); return }
-
-    if (capaFile) {
-      const ext = capaFile.name.split('.').pop()
-      const path = `capas/${obraData.id}/capa.${ext}`
-      const { data: upload } = await supabase.storage.from('fotos').upload(path, capaFile, { upsert: true })
-      if (upload) {
-        const { data: { publicUrl } } = supabase.storage.from('fotos').getPublicUrl(path)
-        fotoCapa = publicUrl
-        await supabase.from('obras').update({ foto_capa: fotoCapa }).eq('id', obraData.id)
+      if (capaFile) {
+        const ext = capaFile.name.split('.').pop()
+        const path = `capas/${obraData.id}/capa.${ext}`
+        const { data: upload } = await supabase.storage.from('fotos').upload(path, capaFile, { upsert: true })
+        if (upload) {
+          const { data: { publicUrl } } = supabase.storage.from('fotos').getPublicUrl(path)
+          await supabase.from('obras').update({ foto_capa: publicUrl }).eq('id', obraData.id)
+        }
       }
-    }
 
-    router.push(`/obras/${obraData.id}`)
+      router.push(`/obras/${obraData.id}`)
+    } catch (err: any) {
+      setError(err.message || 'Erro ao criar obra. Tente novamente.')
+      setLoading(false)
+    }
   }
 
   return (

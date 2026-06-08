@@ -67,33 +67,31 @@ export default function EditarObraPage({ params }: { params: Promise<{ id: strin
     setLoading(true)
     setError('')
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    try {
+      let fotoCapa = capaAtual
 
-    let fotoCapa = capaAtual
-
-    if (capaFile) {
-      const ext = capaFile.name.split('.').pop()
-      const path = `capas/${id}/capa.${ext}`
-      const { data: upload } = await supabase.storage.from('fotos').upload(path, capaFile, { upsert: true })
-      if (upload) {
-        const { data: { publicUrl } } = supabase.storage.from('fotos').getPublicUrl(path)
-        fotoCapa = publicUrl
+      if (capaFile) {
+        const ext = capaFile.name.split('.').pop()
+        const path = `capas/${id}/capa.${ext}`
+        const { data: upload } = await supabase.storage.from('fotos').upload(path, capaFile, { upsert: true })
+        if (upload) {
+          const { data: { publicUrl } } = supabase.storage.from('fotos').getPublicUrl(path)
+          fotoCapa = publicUrl
+        }
+      } else if (removeCapa) {
+        fotoCapa = null
       }
-    } else if (removeCapa) {
-      fotoCapa = null
-    }
 
-    const { error } = await supabase
-      .from('obras')
-      .update({ nome, endereco: endereco || null, data_inicio: dataInicio || null, status, foto_capa: fotoCapa })
-      .eq('id', id)
+      const { error } = await supabase
+        .from('obras')
+        .update({ nome, endereco: endereco || null, data_inicio: dataInicio || null, status, foto_capa: fotoCapa })
+        .eq('id', id)
 
-    if (error) {
-      setError('Erro ao salvar. Tente novamente.')
-      setLoading(false)
-    } else {
+      if (error) throw new Error(error.message)
       router.push(`/obras/${id}`)
+    } catch (err: any) {
+      setError(err.message || 'Erro ao salvar. Tente novamente.')
+      setLoading(false)
     }
   }
 

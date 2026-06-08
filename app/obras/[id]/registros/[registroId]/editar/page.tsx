@@ -90,67 +90,67 @@ export default function EditarRegistroPage({ params }: { params: Promise<{ id: s
     setLoading(true)
     setError('')
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { router.push('/login'); return }
 
-    // Update registro
-    const { error: regError } = await supabase
-      .from('registros')
-      .update({
-        data,
-        clima: clima || null,
-        temperatura: temperatura ? parseInt(temperatura) : null,
-        descricao: descricao || null,
-      })
-      .eq('id', registroId)
+      const { error: regError } = await supabase
+        .from('registros')
+        .update({
+          data,
+          clima: clima || null,
+          temperatura: temperatura ? parseInt(temperatura) : null,
+          descricao: descricao || null,
+        })
+        .eq('id', registroId)
 
-    if (regError) { setError('Erro ao salvar.'); setLoading(false); return }
+      if (regError) throw new Error(regError.message)
 
-    // Remove fotos excluídas
-    if (fotosRemovidas.length > 0) {
-      await supabase.from('fotos').delete().in('id', fotosRemovidas)
-    }
-
-    // Upload novas fotos
-    for (const foto of fotasNovas) {
-      const ext = foto.file.name.split('.').pop()
-      const path = `${user.id}/${registroId}/${Date.now()}.${ext}`
-      const { data: upload } = await supabase.storage.from('fotos').upload(path, foto.file)
-      if (upload) {
-        const { data: { publicUrl } } = supabase.storage.from('fotos').getPublicUrl(path)
-        await supabase.from('fotos').insert({ registro_id: registroId, url: publicUrl })
+      if (fotosRemovidas.length > 0) {
+        await supabase.from('fotos').delete().in('id', fotosRemovidas)
       }
-    }
 
-    // Equipe: apaga tudo e re-insere
-    await supabase.from('equipe_dia').delete().eq('registro_id', registroId)
-    const equipeValida = equipe.filter(w => w.nome.trim())
-    if (equipeValida.length > 0) {
-      await supabase.from('equipe_dia').insert(
-        equipeValida.map(w => ({
-          registro_id: registroId,
-          nome: w.nome,
-          funcao: w.funcao || null,
-          horas: w.horas ? parseFloat(w.horas) : null,
-        }))
-      )
-    }
+      for (const foto of fotasNovas) {
+        const ext = foto.file.name.split('.').pop()
+        const path = `${session.user.id}/${registroId}/${Date.now()}.${ext}`
+        const { data: upload } = await supabase.storage.from('fotos').upload(path, foto.file)
+        if (upload) {
+          const { data: { publicUrl } } = supabase.storage.from('fotos').getPublicUrl(path)
+          await supabase.from('fotos').insert({ registro_id: registroId, url: publicUrl })
+        }
+      }
 
-    // Ocorrências: apaga tudo e re-insere
-    await supabase.from('ocorrencias').delete().eq('registro_id', registroId)
-    const ocorrValidas = ocorrencias.filter(o => o.descricao.trim())
-    if (ocorrValidas.length > 0) {
-      await supabase.from('ocorrencias').insert(
-        ocorrValidas.map(o => ({
-          registro_id: registroId,
-          descricao: o.descricao,
-          tipo: o.tipo,
-          severidade: o.severidade,
-        }))
-      )
-    }
+      await supabase.from('equipe_dia').delete().eq('registro_id', registroId)
+      const equipeValida = equipe.filter(w => w.nome.trim())
+      if (equipeValida.length > 0) {
+        await supabase.from('equipe_dia').insert(
+          equipeValida.map(w => ({
+            registro_id: registroId,
+            nome: w.nome,
+            funcao: w.funcao || null,
+            horas: w.horas ? parseFloat(w.horas) : null,
+          }))
+        )
+      }
 
-    router.push(`/obras/${obraId}/registros/${registroId}`)
+      await supabase.from('ocorrencias').delete().eq('registro_id', registroId)
+      const ocorrValidas = ocorrencias.filter(o => o.descricao.trim())
+      if (ocorrValidas.length > 0) {
+        await supabase.from('ocorrencias').insert(
+          ocorrValidas.map(o => ({
+            registro_id: registroId,
+            descricao: o.descricao,
+            tipo: o.tipo,
+            severidade: o.severidade,
+          }))
+        )
+      }
+
+      router.push(`/obras/${obraId}/registros/${registroId}`)
+    } catch (err: any) {
+      setError(err.message || 'Erro ao salvar. Tente novamente.')
+      setLoading(false)
+    }
   }
 
   if (fetching) {
