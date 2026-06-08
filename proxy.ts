@@ -21,8 +21,8 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  // Refresh session cookie silently
-  await supabase.auth.getUser()
+  // Refresh session cookie silently — never throw
+  try { await supabase.auth.getUser() } catch {}
 
   const { pathname } = request.nextUrl
 

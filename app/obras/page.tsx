@@ -23,13 +23,14 @@ async function signOut() {
 
 export default async function ObrasPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) redirect('/login')
+  const userId = session.user.id
 
   const { data: obras } = await supabase
     .from('obras')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
   return (

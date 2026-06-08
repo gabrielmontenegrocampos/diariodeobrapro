@@ -21,14 +21,14 @@ const statusColor: Record<string, string> = {
 export default async function ObraPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) redirect('/login')
 
   const { data: obra } = await supabase
     .from('obras')
     .select('*')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', session.user.id)
     .single()
 
   if (!obra) notFound()
