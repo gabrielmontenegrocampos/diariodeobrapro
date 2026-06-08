@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Plus, Trash2, Camera, Play } from 'lucide-react'
+import { LoadingOverlay, LoadingButton } from '@/components/LoadingOverlay'
 import Link from 'next/link'
 import Image from 'next/image'
 import { use } from 'react'
@@ -157,13 +158,7 @@ export default function EditarRegistroPage({ params }: { params: Promise<{ id: s
     }
   }
 
-  if (fetching) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-400">
-        Carregando...
-      </div>
-    )
-  }
+  if (fetching) return <LoadingOverlay message="Carregando registro..." />
 
   return (
     <div className="min-h-screen max-w-lg mx-auto px-4 py-6 pb-24">
@@ -340,7 +335,7 @@ export default function EditarRegistroPage({ params }: { params: Promise<{ id: s
           disabled={loading}
           className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl py-3.5 transition disabled:opacity-60 text-base"
         >
-          {loading ? 'Salvando...' : 'Salvar Alterações'}
+          {loading ? <LoadingButton message="Salvando alterações..." /> : 'Salvar Alterações'}
         </button>
       </form>
     </div>

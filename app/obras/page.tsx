@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, MapPin, Calendar, LogOut, HardHat, Settings, Navigation, Users } from 'lucide-react'
 import AppBar from '@/components/AppBar'
+import { LoadingOverlay } from '@/components/LoadingOverlay'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -60,11 +61,7 @@ export default function ObrasPage() {
     router.replace('/login')
   }
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-gray-400 text-sm">Carregando...</div>
-    </div>
-  )
+  if (loading) return <LoadingOverlay message="Carregando obras..." />
 
   return (
     <div className="min-h-screen pb-28">

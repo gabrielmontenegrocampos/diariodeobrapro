@@ -8,6 +8,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { use } from 'react'
 import { maskCEP, buscarCEP } from '@/lib/masks'
+import { LoadingOverlay, LoadingButton } from '@/components/LoadingOverlay'
 
 const ESTADOS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO']
 const TIPOS_OBRA = ['Construção','Reforma','Ampliação','Demolição','Manutenção','Pintura','Instalação','Outro']
@@ -125,7 +126,7 @@ export default function EditarObraPage({ params }: { params: Promise<{ id: strin
   }
 
   const imagemExibida = capaPreview || (!removeCapa ? capaAtual : null)
-  if (fetching) return <div className="min-h-screen flex items-center justify-center text-gray-400">Carregando...</div>
+  if (fetching) return <LoadingOverlay message="Carregando obra..." />
 
   return (
     <div className="min-h-screen max-w-lg mx-auto px-4 py-6 pb-24">
@@ -231,7 +232,7 @@ export default function EditarObraPage({ params }: { params: Promise<{ id: strin
 
         {error && <p className="text-red-500 text-sm px-1">{error}</p>}
         <button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl py-3.5 transition disabled:opacity-60">
-          {loading ? 'Salvando...' : 'Salvar Alterações'}
+          {loading ? <LoadingButton message="Salvando alterações..." /> : 'Salvar Alterações'}
         </button>
       </form>
     </div>

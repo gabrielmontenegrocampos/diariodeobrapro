@@ -7,6 +7,7 @@ import { ArrowLeft, Search, Loader2, Camera, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import AppBar from '@/components/AppBar'
+import { LoadingOverlay, LoadingButton } from '@/components/LoadingOverlay'
 import { maskCPF, maskCNPJ, maskCEP, maskPhone, buscarCEP, buscarCNPJ } from '@/lib/masks'
 
 const ESTADOS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO']
@@ -147,7 +148,7 @@ export default function EmpresaPage() {
     }
   }
 
-  if (fetching) return <div className="min-h-screen flex items-center justify-center text-gray-400">Carregando...</div>
+  if (fetching) return <LoadingOverlay message="Carregando dados da empresa..." />
 
   const inputCls = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
   const labelCls = "block text-xs font-medium text-gray-500 mb-1"
@@ -315,7 +316,7 @@ export default function EmpresaPage() {
 
         <button type="submit" disabled={loading}
           className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl py-3.5 transition disabled:opacity-60">
-          {loading ? 'Salvando...' : 'Salvar Dados'}
+          {loading ? <LoadingButton message="Salvando..." /> : 'Salvar Dados'}
         </button>
       </form>
       </div>

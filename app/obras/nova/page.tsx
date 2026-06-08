@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Camera, X, Search, Loader2 } from 'lucide-react'
 import AppBar from '@/components/AppBar'
+import { LoadingButton } from '@/components/LoadingOverlay'
 import Link from 'next/link'
 import Image from 'next/image'
 import { maskCEP, buscarCEP } from '@/lib/masks'
@@ -238,7 +239,7 @@ export default function NovaObraPage() {
 
         <button type="submit" disabled={loading}
           className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl py-3.5 transition disabled:opacity-60">
-          {loading ? 'Criando...' : 'Criar Obra'}
+          {loading ? <LoadingButton message="Criando obra..." /> : 'Criar Obra'}
         </button>
       </form>
       </div>

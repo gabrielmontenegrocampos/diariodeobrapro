@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, UserPlus, Trash2, Clock, CheckCircle, Users } from 'lucide-react'
 import Link from 'next/link'
 import AppBar from '@/components/AppBar'
+import { LoadingOverlay } from '@/components/LoadingOverlay'
 
 type Member = {
   id: string
@@ -94,9 +95,7 @@ export default function EquipePage() {
     setMembers(prev => prev.filter(m => m.id !== id))
   }
 
-  if (fetching) return (
-    <div className="min-h-screen flex items-center justify-center text-gray-400">Carregando...</div>
-  )
+  if (fetching) return <LoadingOverlay message="Carregando equipe..." />
 
   return (
     <div className="min-h-screen">

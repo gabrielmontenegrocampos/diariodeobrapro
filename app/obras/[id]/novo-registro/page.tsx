@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Plus, Trash2, Camera, Play } from 'lucide-react'
 import AppBar from '@/components/AppBar'
+import { LoadingOverlay, LoadingButton } from '@/components/LoadingOverlay'
 import Link from 'next/link'
 import Image from 'next/image'
 import { use } from 'react'
@@ -345,7 +346,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
           disabled={loading}
           className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl py-3.5 transition disabled:opacity-60 text-base"
         >
-          {loading ? 'Salvando...' : 'Salvar Registro'}
+          {loading ? <LoadingButton message="Salvando..." /> : 'Salvar Registro'}
         </button>
       </form>
       </div>
