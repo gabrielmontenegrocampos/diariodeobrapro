@@ -1,11 +1,12 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Plus, Share2, Image as ImageIcon, Users, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Plus, Image as ImageIcon, Users, AlertTriangle, Pencil } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import type { RegistroCompleto } from '@/lib/types'
 import ShareButton from './ShareButton'
+import DeleteObraButton from './DeleteObraButton'
 
 const climaIcon: Record<string, string> = {
   sol: '☀️', nublado: '🌤️', chuva: '🌧️', tempestade: '⛈️', ventoso: '💨',
@@ -53,6 +54,12 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
         <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${statusColor[obra.status]}`}>
           {obra.status}
         </span>
+        <Link href={`/obras/${id}/editar`}>
+          <button className="p-2 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-orange-500 hover:border-orange-300 transition">
+            <Pencil size={16} />
+          </button>
+        </Link>
+        <DeleteObraButton obraId={id} />
       </div>
 
       <div className="flex gap-2 mb-5">
