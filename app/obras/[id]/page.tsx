@@ -141,8 +141,8 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
         </Link>
         <ShareButton url={shareUrl} />
         <Link href={`/obras/${id}/relatorio`}>
-          <button className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
-            Relatório
+          <button className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition flex items-center gap-1.5">
+            ⬇ PDF
           </button>
         </Link>
       </div>
