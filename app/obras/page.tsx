@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, MapPin, Calendar, LogOut, HardHat, Building2, ExternalLink } from 'lucide-react'
+import { Plus, MapPin, Calendar, LogOut, HardHat, Building2, Navigation } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -26,13 +26,10 @@ export default function ObrasPage() {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.replace('/login'); return }
-
       const { data } = await supabase
-        .from('obras')
-        .select('*')
+        .from('obras').select('*')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
-
       setObras(data || [])
       setLoading(false)
     }
@@ -44,13 +41,11 @@ export default function ObrasPage() {
     router.replace('/login')
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-400 text-sm">Carregando...</div>
-      </div>
-    )
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-gray-400 text-sm">Carregando...</div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen max-w-lg mx-auto px-4 py-6 pb-28">
@@ -84,45 +79,50 @@ export default function ObrasPage() {
               : null
 
             return (
-              <div key={obra.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition overflow-hidden">
+              <div
+                key={obra.id}
+                onClick={() => router.push(`/obras/${obra.id}`)}
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition overflow-hidden cursor-pointer"
+              >
                 <div className="flex">
-                  <Link href={`/obras/${obra.id}`} className="shrink-0">
-                    <div className="relative w-24 h-24">
-                      {obra.foto_capa ? (
-                        <Image src={obra.foto_capa} alt={obra.nome} fill className="object-cover" unoptimized />
-                      ) : (
-                        <div className="w-full h-full bg-orange-50 flex items-center justify-center">
-                          <HardHat size={28} className="text-orange-300" />
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-
-                  <div className="flex-1 min-w-0 p-3">
-                    <Link href={`/obras/${obra.id}`} className="block">
-                      <div className="flex items-start justify-between gap-1 mb-0.5">
-                        <h2 className="font-bold text-gray-900 text-sm leading-tight line-clamp-2">{obra.nome}</h2>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${statusColor[obra.status]}`}>
-                          {statusLabel[obra.status]}
-                        </span>
+                  {/* Foto quadrada */}
+                  <div className="relative w-24 h-24 shrink-0">
+                    {obra.foto_capa ? (
+                      <Image src={obra.foto_capa} alt={obra.nome} fill className="object-cover" unoptimized />
+                    ) : (
+                      <div className="w-full h-full bg-orange-50 flex items-center justify-center">
+                        <HardHat size={28} className="text-orange-300" />
                       </div>
-                      {obra.tipo_obra && (
-                        <p className="text-xs text-gray-400 mb-1">{obra.tipo_obra}</p>
-                      )}
-                    </Link>
+                    )}
+                  </div>
 
-                    {enderecoExibir && mapsUrl && (
-                      <a
-                        href={mapsUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-xs text-orange-500 hover:text-orange-600 hover:underline mt-1"
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <MapPin size={11} className="shrink-0" />
-                        <span className="line-clamp-1">{enderecoExibir}</span>
-                        <ExternalLink size={10} className="shrink-0" />
-                      </a>
+                  {/* Conteúdo */}
+                  <div className="flex-1 min-w-0 p-3">
+                    <div className="flex items-start justify-between gap-1 mb-0.5">
+                      <h2 className="font-bold text-gray-900 text-sm leading-tight line-clamp-2">{obra.nome}</h2>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${statusColor[obra.status]}`}>
+                        {statusLabel[obra.status]}
+                      </span>
+                    </div>
+
+                    {obra.tipo_obra && (
+                      <p className="text-xs text-gray-400 mb-1">{obra.tipo_obra}</p>
+                    )}
+
+                    {enderecoExibir && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <MapPin size={11} className="text-gray-400 shrink-0" />
+                        <span className="text-xs text-gray-500 line-clamp-1 flex-1">{enderecoExibir}</span>
+                        {mapsUrl && (
+                          <button
+                            onClick={e => { e.stopPropagation(); window.open(mapsUrl, '_blank') }}
+                            className="shrink-0 p-1 text-orange-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition"
+                            title="Abrir no Google Maps"
+                          >
+                            <Navigation size={13} />
+                          </button>
+                        )}
+                      </div>
                     )}
 
                     {obra.data_inicio && (

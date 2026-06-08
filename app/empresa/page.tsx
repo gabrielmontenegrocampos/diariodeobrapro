@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, Search, Loader2 } from 'lucide-react'
+import { ArrowLeft, Search, Loader2, Camera, X } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { maskCPF, maskCNPJ, maskCEP, maskPhone, buscarCEP, buscarCNPJ } from '@/lib/masks'
 
@@ -13,12 +14,16 @@ export default function EmpresaPage() {
   const supabase = createClient()
   const router = useRouter()
 
+  const logoRef = useRef<HTMLInputElement>(null)
   const [fetching, setFetching] = useState(true)
   const [loading, setLoading] = useState(false)
   const [buscandoCNPJ, setBuscandoCNPJ] = useState(false)
   const [buscandoCEP, setBuscandoCEP] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
 
   const [tipo, setTipo] = useState<'juridica' | 'fisica'>('juridica')
   const [cpfCnpj, setCpfCnpj] = useState('')
@@ -55,6 +60,7 @@ export default function EmpresaPage() {
         setBairro(data.bairro || '')
         setCidade(data.cidade || '')
         setEstado(data.estado || '')
+        setLogoUrl(data.logo_url || null)
       }
       setFetching(false)
     }
@@ -106,6 +112,18 @@ export default function EmpresaPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
 
+      let novaLogoUrl = logoUrl
+      if (logoFile) {
+        const ext = logoFile.name.split('.').pop()
+        const path = `logos/${session.user.id}/logo.${ext}`
+        const { data: upload } = await supabase.storage.from('fotos').upload(path, logoFile, { upsert: true })
+        if (upload) {
+          const { data: { publicUrl } } = supabase.storage.from('fotos').getPublicUrl(path)
+          novaLogoUrl = publicUrl
+          setLogoUrl(publicUrl)
+        }
+      }
+
       const payload = {
         user_id: session.user.id,
         tipo, cpf_cnpj: cpfCnpj, razao_social: razaoSocial,
@@ -114,6 +132,7 @@ export default function EmpresaPage() {
         cep: cep || null, logradouro: logradouro || null,
         numero: numero || null, complemento: complemento || null,
         bairro: bairro || null, cidade: cidade || null, estado: estado || null,
+        logo_url: novaLogoUrl,
       }
 
       const { error } = await supabase.from('empresas').upsert(payload, { onConflict: 'user_id' })
@@ -142,6 +161,37 @@ export default function EmpresaPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+
+        {/* Logo / Foto da empresa */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Logo / Foto da empresa</p>
+          <input ref={logoRef} type="file" accept="image/*" className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) { setLogoFile(f); setLogoPreview(URL.createObjectURL(f)) }; e.target.value = '' }} />
+          <div className="flex items-center gap-4">
+            <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shrink-0">
+              {(logoPreview || logoUrl) ? (
+                <>
+                  <Image src={logoPreview || logoUrl!} alt="Logo" fill className="object-contain p-1" unoptimized />
+                  <button type="button" onClick={() => { setLogoFile(null); setLogoPreview(null); setLogoUrl(null) }}
+                    className="absolute top-0.5 right-0.5 bg-black/50 text-white rounded-full p-0.5">
+                    <X size={10} />
+                  </button>
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-300">
+                  <Camera size={24} />
+                </div>
+              )}
+            </div>
+            <div>
+              <button type="button" onClick={() => logoRef.current?.click()}
+                className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-orange-300 hover:text-orange-500 transition">
+                {logoUrl || logoPreview ? 'Trocar imagem' : 'Adicionar logo'}
+              </button>
+              <p className="text-xs text-gray-400 mt-1">PNG, JPG ou SVG · aparece no relatório PDF</p>
+            </div>
+          </div>
+        </div>
 
         {/* Tipo */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
