@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Plus, Trash2, Camera, Play } from 'lucide-react'
+import AppBar from '@/components/AppBar'
 import Link from 'next/link'
 import Image from 'next/image'
 import { use } from 'react'
@@ -141,8 +142,10 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div className="min-h-screen max-w-lg mx-auto px-4 py-6 pb-24">
-      <div className="flex items-center gap-3 mb-6">
+    <div className="min-h-screen pb-24">
+      <AppBar subtitle="Novo Registro" />
+      <div className="max-w-lg mx-auto px-4 py-5">
+      <div className="flex items-center gap-3 mb-5">
         <Link href={`/obras/${obraId}`} className="p-2 -ml-2 text-gray-400 hover:text-gray-600">
           <ArrowLeft size={20} />
         </Link>
@@ -345,6 +348,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
           {loading ? 'Salvando...' : 'Salvar Registro'}
         </button>
       </form>
+      </div>
     </div>
   )
 }

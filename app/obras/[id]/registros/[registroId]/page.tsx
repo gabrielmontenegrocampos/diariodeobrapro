@@ -6,6 +6,7 @@ import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import DeleteRegistroButton from './DeleteRegistroButton'
 import PhotoGallery from '@/components/PhotoGallery'
+import AppBar from '@/components/AppBar'
 
 const climaIcon: Record<string, string> = {
   sol: '☀️', nublado: '🌤️', chuva: '🌧️', tempestade: '⛈️', ventoso: '💨',
@@ -39,7 +40,9 @@ export default async function RegistroPage({
   if (!registro) notFound()
 
   return (
-    <div className="min-h-screen max-w-lg mx-auto px-4 py-6">
+    <div className="min-h-screen">
+      <AppBar subtitle="Detalhe do Registro" />
+    <div className="max-w-lg mx-auto px-4 py-5">
       <div className="flex items-center gap-3 mb-5">
         <Link href={`/obras/${obraId}`} className="p-2 -ml-2 text-gray-400 hover:text-gray-600">
           <ArrowLeft size={20} />
@@ -122,6 +125,7 @@ export default async function RegistroPage({
           </div>
         )}
       </div>
+    </div>
     </div>
   )
 }

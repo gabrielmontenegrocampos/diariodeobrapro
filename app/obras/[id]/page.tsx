@@ -7,6 +7,7 @@ import { ptBR } from 'date-fns/locale'
 import type { RegistroCompleto } from '@/lib/types'
 import ShareButton from './ShareButton'
 import DeleteObraButton from './DeleteObraButton'
+import AppBar from '@/components/AppBar'
 
 const climaIcon: Record<string, string> = {
   sol: '☀️', nublado: '🌤️', chuva: '🌧️', tempestade: '⛈️', ventoso: '💨',
@@ -45,7 +46,9 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
     : null
 
   return (
-    <div className="min-h-screen max-w-lg mx-auto px-4 py-6">
+    <div className="min-h-screen">
+      <AppBar subtitle={obra.nome} />
+    <div className="max-w-lg mx-auto px-4 py-5">
       {/* Topo */}
       <div className="flex items-center gap-2 mb-4">
         <Link href="/obras" className="p-2 -ml-2 text-gray-400 hover:text-gray-600">
@@ -157,28 +160,38 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
         <div className="space-y-3">
           {registros.map((reg: RegistroCompleto & { fotos: { id: string; url: string }[]; equipe_dia: { id: string }[]; ocorrencias: { id: string }[] }) => (
             <Link key={reg.id} href={`/obras/${id}/registros/${reg.id}`}>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-gray-800 text-sm capitalize">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-bold text-gray-900 text-sm capitalize">
                     {format(parseISO(reg.data), "EEEE, dd 'de' MMMM", { locale: ptBR })}
                   </span>
-                  <span className="text-base">
-                    {reg.clima ? climaIcon[reg.clima] : ''}
-                    {reg.temperatura ? ` ${reg.temperatura}°C` : ''}
-                  </span>
+                  {(reg.clima || reg.temperatura) && (
+                    <span className="text-base font-medium text-gray-600">
+                      {reg.clima ? climaIcon[reg.clima] : ''}{reg.temperatura ? ` ${reg.temperatura}°C` : ''}
+                    </span>
+                  )}
                 </div>
                 {reg.descricao && (
-                  <p className="text-sm text-gray-600 line-clamp-2 mb-2">{reg.descricao}</p>
+                  <p className="text-sm text-gray-600 line-clamp-2 mb-3 leading-relaxed">{reg.descricao}</p>
                 )}
-                <div className="flex gap-3 text-xs text-gray-400">
+                <div className="flex gap-4 text-xs text-gray-400 pt-2 border-t border-gray-50">
                   {reg.fotos?.length > 0 && (
-                    <span className="flex items-center gap-1"><ImageIcon size={12} /> {reg.fotos.length} foto{reg.fotos.length > 1 ? 's' : ''}</span>
+                    <span className="flex items-center gap-1.5">
+                      <ImageIcon size={13} className="text-gray-400" />
+                      {reg.fotos.length} foto{reg.fotos.length > 1 ? 's' : ''}
+                    </span>
                   )}
                   {reg.equipe_dia?.length > 0 && (
-                    <span className="flex items-center gap-1"><Users size={12} /> {reg.equipe_dia.length} trab.</span>
+                    <span className="flex items-center gap-1.5">
+                      <Users size={13} className="text-gray-400" />
+                      {reg.equipe_dia.length} trab.
+                    </span>
                   )}
                   {reg.ocorrencias?.length > 0 && (
-                    <span className="flex items-center gap-1 text-amber-500"><AlertTriangle size={12} /> {reg.ocorrencias.length} ocorr.</span>
+                    <span className="flex items-center gap-1.5 text-amber-500 font-medium">
+                      <AlertTriangle size={13} />
+                      {reg.ocorrencias.length} ocorr.
+                    </span>
                   )}
                 </div>
               </div>
@@ -186,6 +199,7 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
           ))}
         </div>
       )}
+    </div>
     </div>
   )
 }

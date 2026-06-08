@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, MapPin, Calendar, LogOut, HardHat, Building2, Navigation } from 'lucide-react'
+import { Plus, MapPin, Calendar, LogOut, HardHat, Settings, Navigation } from 'lucide-react'
+import AppBar from '@/components/AppBar'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -48,13 +49,15 @@ export default function ObrasPage() {
   )
 
   return (
-    <div className="min-h-screen max-w-lg mx-auto px-4 py-6 pb-28">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Minhas Obras</h1>
+    <div className="min-h-screen pb-28">
+      <AppBar />
+      <div className="max-w-lg mx-auto px-4 py-5">
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="text-xl font-bold text-gray-900">Minhas Obras</h1>
         <div className="flex items-center gap-1">
           <Link href="/empresa">
-            <button className="p-2 text-gray-400 hover:text-orange-500 transition" title="Dados da empresa">
-              <Building2 size={20} />
+            <button className="p-2 text-gray-400 hover:text-orange-500 transition" title="Configurações da empresa">
+              <Settings size={20} />
             </button>
           </Link>
           <button onClick={signOut} className="p-2 text-gray-400 hover:text-gray-600">
@@ -148,6 +151,7 @@ export default function ObrasPage() {
           <span className="font-semibold pr-1">Nova Obra</span>
         </button>
       </Link>
+      </div>
     </div>
   )
 }

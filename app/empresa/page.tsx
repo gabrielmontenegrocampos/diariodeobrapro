@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Search, Loader2, Camera, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import AppBar from '@/components/AppBar'
 import { maskCPF, maskCNPJ, maskCEP, maskPhone, buscarCEP, buscarCNPJ } from '@/lib/masks'
 
 const ESTADOS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO']
@@ -152,8 +153,10 @@ export default function EmpresaPage() {
   const labelCls = "block text-xs font-medium text-gray-500 mb-1"
 
   return (
-    <div className="min-h-screen max-w-lg mx-auto px-4 py-6 pb-24">
-      <div className="flex items-center gap-3 mb-6">
+    <div className="min-h-screen pb-24">
+      <AppBar subtitle="Dados da Empresa" />
+      <div className="max-w-lg mx-auto px-4 py-5">
+      <div className="flex items-center gap-3 mb-5">
         <Link href="/obras" className="p-2 -ml-2 text-gray-400 hover:text-gray-600">
           <ArrowLeft size={20} />
         </Link>
@@ -315,6 +318,7 @@ export default function EmpresaPage() {
           {loading ? 'Salvando...' : 'Salvar Dados'}
         </button>
       </form>
+      </div>
     </div>
   )
 }
