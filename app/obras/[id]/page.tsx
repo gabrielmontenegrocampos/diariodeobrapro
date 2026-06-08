@@ -174,10 +174,10 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
           <p className="text-sm mt-1">Adicione o primeiro registro do dia</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5 pb-6">
           {registros.map((reg: RegistroCompleto & { fotos: { id: string; url: string }[]; equipe_dia: { id: string }[]; ocorrencias: { id: string }[] }) => (
-            <Link key={reg.id} href={`/obras/${id}/registros/${reg.id}`}>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition hover:-translate-y-0.5">
+            <Link key={reg.id} href={`/obras/${id}/registros/${reg.id}`} className="block">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99] transition-all duration-150">
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-bold text-gray-900 text-sm capitalize">
                     {format(parseISO(reg.data), "EEEE, dd 'de' MMMM", { locale: ptBR })}
