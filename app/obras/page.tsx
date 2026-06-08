@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
-import { Plus, MapPin, Calendar, LogOut } from 'lucide-react'
+import { Plus, MapPin, Calendar, LogOut, HardHat } from 'lucide-react'
 import type { Obra } from '@/lib/types'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -50,25 +51,52 @@ export default async function ObrasPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {obras.map((obra: Obra) => (
+          {obras.map((obra: Obra & { foto_capa?: string | null }) => (
             <Link key={obra.id} href={`/obras/${obra.id}`}>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition">
-                <div className="flex items-start justify-between gap-2">
-                  <h2 className="font-semibold text-gray-900 text-base leading-tight">{obra.nome}</h2>
-                  <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${statusColor[obra.status]}`}>
-                    {statusLabel[obra.status]}
-                  </span>
-                </div>
-                {obra.endereco && (
-                  <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
-                    <MapPin size={12} /> {obra.endereco}
-                  </p>
-                )}
-                {obra.data_inicio && (
-                  <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                    <Calendar size={12} />
-                    Início: {format(parseISO(obra.data_inicio), "dd/MM/yyyy", { locale: ptBR })}
-                  </p>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition overflow-hidden">
+                {obra.foto_capa ? (
+                  <div className="relative w-full h-36">
+                    <Image src={obra.foto_capa} alt={obra.nome} fill className="object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <div className="flex items-end justify-between gap-2">
+                        <h2 className="font-bold text-white text-base leading-tight drop-shadow">{obra.nome}</h2>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${statusColor[obra.status]}`}>
+                          {statusLabel[obra.status]}
+                        </span>
+                      </div>
+                      {obra.endereco && (
+                        <p className="text-xs text-white/80 mt-0.5 flex items-center gap-1">
+                          <MapPin size={10} /> {obra.endereco}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="bg-orange-50 text-orange-400 p-2 rounded-xl shrink-0">
+                          <HardHat size={18} />
+                        </div>
+                        <h2 className="font-semibold text-gray-900 text-base leading-tight">{obra.nome}</h2>
+                      </div>
+                      <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${statusColor[obra.status]}`}>
+                        {statusLabel[obra.status]}
+                      </span>
+                    </div>
+                    {obra.endereco && (
+                      <p className="text-sm text-gray-500 mt-2 flex items-center gap-1 ml-10">
+                        <MapPin size={12} /> {obra.endereco}
+                      </p>
+                    )}
+                    {obra.data_inicio && (
+                      <p className="text-xs text-gray-400 mt-1 flex items-center gap-1 ml-10">
+                        <Calendar size={12} />
+                        Início: {format(parseISO(obra.data_inicio), "dd/MM/yyyy", { locale: ptBR })}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             </Link>
