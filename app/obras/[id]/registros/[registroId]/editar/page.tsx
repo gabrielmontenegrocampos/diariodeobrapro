@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, Plus, Trash2, Camera } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Camera, Play } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { use } from 'react'
@@ -36,7 +36,7 @@ export default function EditarRegistroPage({ params }: { params: Promise<{ id: s
   const [descricao, setDescricao] = useState('')
   const [fotosExistentes, setFotosExistentes] = useState<FotoExistente[]>([])
   const [fotosRemovidas, setFotosRemovidas] = useState<string[]>([])
-  const [fotasNovas, setFotasNovas] = useState<{ file: File; preview: string }[]>([])
+  const [fotasNovas, setFotasNovas] = useState<{ file: File; preview: string; tipo: string }[]>([])
   const [equipe, setEquipe] = useState<WorkerRow[]>([])
   const [ocorrencias, setOcorrencias] = useState<OcorrenciaRow[]>([])
 
@@ -68,7 +68,11 @@ export default function EditarRegistroPage({ params }: { params: Promise<{ id: s
 
   function addPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || [])
-    setFotasNovas(prev => [...prev, ...files.map(f => ({ file: f, preview: URL.createObjectURL(f) }))])
+    setFotasNovas(prev => [...prev, ...files.map(f => ({
+      file: f,
+      preview: URL.createObjectURL(f),
+      tipo: f.type.startsWith('video/') ? 'video' : 'foto',
+    }))])
     e.target.value = ''
   }
 
@@ -116,7 +120,7 @@ export default function EditarRegistroPage({ params }: { params: Promise<{ id: s
         const { data: upload } = await supabase.storage.from('fotos').upload(path, foto.file)
         if (upload) {
           const { data: { publicUrl } } = supabase.storage.from('fotos').getPublicUrl(path)
-          await supabase.from('fotos').insert({ registro_id: registroId, url: publicUrl })
+          await supabase.from('fotos').insert({ registro_id: registroId, url: publicUrl, tipo: foto.tipo })
         }
       }
 
@@ -227,21 +231,30 @@ export default function EditarRegistroPage({ params }: { params: Promise<{ id: s
 
         {/* Fotos */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Fotos</label>
-          <input ref={fileRef} type="file" accept="image/*" multiple capture="environment" onChange={addPhoto} className="hidden" />
+          <label className="block text-sm font-medium text-gray-700 mb-2">Fotos e Vídeos</label>
+          <input ref={fileRef} type="file" accept="image/*,video/*" multiple onChange={addPhoto} className="hidden" />
           {(fotosExistentes.length > 0 || fotasNovas.length > 0) && (
             <div className="grid grid-cols-3 gap-2 mb-2">
               {fotosExistentes.map(f => (
-                <div key={f.id} className="relative aspect-square">
-                  <Image src={f.url} alt="" fill className="object-cover rounded-lg" />
+                <div key={f.id} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                  <Image src={f.url} alt="" fill className="object-cover" />
                   <button type="button" onClick={() => removeExistingPhoto(f.id)} className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5">
                     <Trash2 size={12} />
                   </button>
                 </div>
               ))}
               {fotasNovas.map((f, i) => (
-                <div key={i} className="relative aspect-square">
-                  <Image src={f.preview} alt="" fill className="object-cover rounded-lg" />
+                <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                  {f.tipo === 'video' ? (
+                    <>
+                      <video src={f.preview} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <Play size={14} className="text-white fill-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <Image src={f.preview} alt="" fill className="object-cover" />
+                  )}
                   <button type="button" onClick={() => setFotasNovas(prev => prev.filter((_, idx) => idx !== i))} className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5">
                     <Trash2 size={12} />
                   </button>
@@ -254,7 +267,7 @@ export default function EditarRegistroPage({ params }: { params: Promise<{ id: s
             onClick={() => fileRef.current?.click()}
             className="w-full border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-500 hover:border-orange-300 hover:text-orange-500 transition flex items-center justify-center gap-2"
           >
-            <Camera size={18} /> Adicionar fotos
+            <Camera size={18} /> Adicionar fotos e vídeos
           </button>
         </div>
 

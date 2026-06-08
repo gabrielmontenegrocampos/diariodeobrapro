@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, Plus, Trash2, Camera } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Camera, Play } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { use } from 'react'
@@ -30,7 +30,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
   const [clima, setClima] = useState('')
   const [temperatura, setTemperatura] = useState('')
   const [descricao, setDescricao] = useState('')
-  const [fotos, setFotos] = useState<{ file: File; preview: string }[]>([])
+  const [fotos, setFotos] = useState<{ file: File; preview: string; tipo: string }[]>([])
   const [equipe, setEquipe] = useState<WorkerRow[]>([{ nome: '', funcao: '', horas: '' }])
   const [ocorrencias, setOcorrencias] = useState<OcorrenciaRow[]>([])
   const [loading, setLoading] = useState(false)
@@ -38,8 +38,12 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
 
   function addPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || [])
-    const previews = files.map(f => ({ file: f, preview: URL.createObjectURL(f) }))
-    setFotos(prev => [...prev, ...previews])
+    const medias = files.map(f => ({
+      file: f,
+      preview: URL.createObjectURL(f),
+      tipo: f.type.startsWith('video/') ? 'video' : 'foto',
+    }))
+    setFotos(prev => [...prev, ...medias])
     e.target.value = ''
   }
 
@@ -101,7 +105,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
         const { data: upload } = await supabase.storage.from('fotos').upload(path, foto.file)
         if (upload) {
           const { data: { publicUrl } } = supabase.storage.from('fotos').getPublicUrl(path)
-          await supabase.from('fotos').insert({ registro_id: registro.id, url: publicUrl })
+          await supabase.from('fotos').insert({ registro_id: registro.id, url: publicUrl, tipo: foto.tipo })
         }
       }
 
@@ -201,20 +205,25 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
           />
         </div>
 
-        {/* Fotos */}
+        {/* Fotos e Vídeos */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Fotos</label>
-          <input ref={fileRef} type="file" accept="image/*" multiple capture="environment" onChange={addPhoto} className="hidden" />
+          <label className="block text-sm font-medium text-gray-700 mb-2">Fotos e Vídeos</label>
+          <input ref={fileRef} type="file" accept="image/*,video/*" multiple onChange={addPhoto} className="hidden" />
           {fotos.length > 0 && (
             <div className="grid grid-cols-3 gap-2 mb-2">
               {fotos.map((f, i) => (
-                <div key={i} className="relative aspect-square">
-                  <Image src={f.preview} alt="" fill className="object-cover rounded-lg" />
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(i)}
-                    className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5"
-                  >
+                <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                  {f.tipo === 'video' ? (
+                    <>
+                      <video src={f.preview} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <Play size={16} className="text-white fill-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <Image src={f.preview} alt="" fill className="object-cover" />
+                  )}
+                  <button type="button" onClick={() => removePhoto(i)} className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5">
                     <Trash2 size={12} />
                   </button>
                 </div>
@@ -226,7 +235,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
             onClick={() => fileRef.current?.click()}
             className="w-full border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-500 hover:border-orange-300 hover:text-orange-500 transition flex items-center justify-center gap-2"
           >
-            <Camera size={18} /> Adicionar fotos
+            <Camera size={18} /> Adicionar fotos e vídeos
           </button>
         </div>
 
