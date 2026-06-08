@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, MapPin, Calendar, LogOut, HardHat, Settings, Navigation } from 'lucide-react'
+import { Plus, MapPin, Calendar, LogOut, HardHat, Settings, Navigation, Users } from 'lucide-react'
 import AppBar from '@/components/AppBar'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -21,15 +21,33 @@ export default function ObrasPage() {
   const router = useRouter()
   const supabase = createClient()
   const [obras, setObras] = useState<any[]>([])
+  const [userId, setUserId] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.replace('/login'); return }
+      setUserId(session.user.id)
+
+      // Ativa convites pendentes para usuários que já tinham conta
+      const { data: pending } = await supabase
+        .from('team_members')
+        .select('id, owner_id')
+        .eq('member_email', session.user.email!)
+        .eq('status', 'pending')
+      if (pending && pending.length > 0) {
+        for (const inv of pending) {
+          await supabase.rpc('activate_pending_invite', {
+            p_owner_id: inv.owner_id,
+            p_email: session.user.email,
+          })
+        }
+      }
+
+      // Busca obras próprias + compartilhadas (RLS cuida da visibilidade)
       const { data } = await supabase
         .from('obras').select('*')
-        .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
       setObras(data || [])
       setLoading(false)
@@ -55,6 +73,11 @@ export default function ObrasPage() {
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-xl font-bold text-gray-900">Minhas Obras</h1>
         <div className="flex items-center gap-1">
+          <Link href="/equipe">
+            <button className="p-2 text-gray-400 hover:text-orange-500 transition" title="Equipe">
+              <Users size={20} />
+            </button>
+          </Link>
           <Link href="/empresa">
             <button className="p-2 text-gray-400 hover:text-orange-500 transition" title="Configurações da empresa">
               <Settings size={20} />
@@ -103,9 +126,16 @@ export default function ObrasPage() {
                   <div className="flex-1 min-w-0 p-3">
                     <div className="flex items-start justify-between gap-1 mb-0.5">
                       <h2 className="font-bold text-gray-900 text-sm leading-tight line-clamp-2">{obra.nome}</h2>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${statusColor[obra.status]}`}>
-                        {statusLabel[obra.status]}
-                      </span>
+                      <div className="flex flex-col items-end gap-0.5 shrink-0">
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColor[obra.status]}`}>
+                          {statusLabel[obra.status]}
+                        </span>
+                        {obra.user_id !== userId && (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 flex items-center gap-1">
+                            <Users size={9} /> Equipe
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {obra.tipo_obra && (
