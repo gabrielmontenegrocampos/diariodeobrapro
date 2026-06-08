@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
-import { Plus, MapPin, Calendar, LogOut, HardHat } from 'lucide-react'
+import { Plus, MapPin, Calendar, LogOut, HardHat, Building2 } from 'lucide-react'
 import type { Obra } from '@/lib/types'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -37,11 +37,18 @@ export default async function ObrasPage() {
     <div className="min-h-screen max-w-lg mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Minhas Obras</h1>
-        <form action={signOut}>
-          <button type="submit" className="p-2 text-gray-400 hover:text-gray-600">
-            <LogOut size={20} />
-          </button>
-        </form>
+        <div className="flex items-center gap-1">
+          <Link href="/empresa">
+            <button className="p-2 text-gray-400 hover:text-orange-500 transition" title="Dados da empresa">
+              <Building2 size={20} />
+            </button>
+          </Link>
+          <form action={signOut}>
+            <button type="submit" className="p-2 text-gray-400 hover:text-gray-600">
+              <LogOut size={20} />
+            </button>
+          </form>
+        </div>
       </div>
 
       {(!obras || obras.length === 0) ? (
