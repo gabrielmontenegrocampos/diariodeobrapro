@@ -2,13 +2,12 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
-import { Plus, MapPin, Calendar, LogOut, HardHat, Building2 } from 'lucide-react'
-import type { Obra } from '@/lib/types'
+import { Plus, MapPin, Calendar, LogOut, HardHat, Building2, ExternalLink } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
-const statusLabel = { ativa: 'Ativa', pausada: 'Pausada', concluida: 'Concluída' }
-const statusColor = {
+const statusLabel: Record<string, string> = { ativa: 'Ativa', pausada: 'Pausada', concluida: 'Concluída' }
+const statusColor: Record<string, string> = {
   ativa: 'bg-green-100 text-green-700',
   pausada: 'bg-yellow-100 text-yellow-700',
   concluida: 'bg-gray-100 text-gray-600',
@@ -34,7 +33,7 @@ export default async function ObrasPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div className="min-h-screen max-w-lg mx-auto px-4 py-6">
+    <div className="min-h-screen max-w-lg mx-auto px-4 py-6 pb-28">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Minhas Obras</h1>
         <div className="flex items-center gap-1">
@@ -58,56 +57,76 @@ export default async function ObrasPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {obras.map((obra: Obra & { foto_capa?: string | null }) => (
-            <Link key={obra.id} href={`/obras/${obra.id}`}>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition overflow-hidden">
-                {obra.foto_capa ? (
-                  <div className="relative w-full h-36">
-                    <Image src={obra.foto_capa} alt={obra.nome} fill className="object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-3">
-                      <div className="flex items-end justify-between gap-2">
-                        <h2 className="font-bold text-white text-base leading-tight drop-shadow">{obra.nome}</h2>
+          {obras.map((obra: any) => {
+            const enderecoCompleto = [obra.logradouro, obra.numero, obra.bairro, obra.cidade, obra.estado]
+              .filter(Boolean).join(', ')
+            const enderecoExibir = enderecoCompleto || obra.endereco || ''
+            const mapsUrl = enderecoExibir
+              ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(enderecoExibir)}`
+              : null
+
+            return (
+              <div key={obra.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition overflow-hidden">
+                <div className="flex">
+                  {/* Foto quadrada */}
+                  <Link href={`/obras/${obra.id}`} className="shrink-0">
+                    <div className="relative w-24 h-24">
+                      {obra.foto_capa ? (
+                        <Image src={obra.foto_capa} alt={obra.nome} fill className="object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-orange-50 flex items-center justify-center">
+                          <HardHat size={28} className="text-orange-300" />
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+
+                  {/* Conteúdo */}
+                  <div className="flex-1 min-w-0 p-3">
+                    <Link href={`/obras/${obra.id}`} className="block">
+                      <div className="flex items-start justify-between gap-1 mb-0.5">
+                        <h2 className="font-bold text-gray-900 text-sm leading-tight line-clamp-2">{obra.nome}</h2>
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${statusColor[obra.status]}`}>
                           {statusLabel[obra.status]}
                         </span>
                       </div>
-                      {obra.endereco && (
-                        <p className="text-xs text-white/80 mt-0.5 flex items-center gap-1">
-                          <MapPin size={10} /> {obra.endereco}
-                        </p>
+                      {obra.tipo_obra && (
+                        <p className="text-xs text-gray-400 mb-1">{obra.tipo_obra}</p>
                       )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="bg-orange-50 text-orange-400 p-2 rounded-xl shrink-0">
-                          <HardHat size={18} />
-                        </div>
-                        <h2 className="font-semibold text-gray-900 text-base leading-tight">{obra.nome}</h2>
-                      </div>
-                      <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${statusColor[obra.status]}`}>
-                        {statusLabel[obra.status]}
-                      </span>
-                    </div>
-                    {obra.endereco && (
-                      <p className="text-sm text-gray-500 mt-2 flex items-center gap-1 ml-10">
-                        <MapPin size={12} /> {obra.endereco}
-                      </p>
-                    )}
+                    </Link>
+
+                    {/* Endereço — abre Google Maps */}
+                    {enderecoExibir && mapsUrl ? (
+                      <a
+                        href={mapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-orange-500 hover:text-orange-600 hover:underline mt-1"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <MapPin size={11} className="shrink-0" />
+                        <span className="line-clamp-1">{enderecoExibir}</span>
+                        <ExternalLink size={10} className="shrink-0" />
+                      </a>
+                    ) : null}
+
+                    {/* Data */}
                     {obra.data_inicio && (
-                      <p className="text-xs text-gray-400 mt-1 flex items-center gap-1 ml-10">
-                        <Calendar size={12} />
-                        Início: {format(parseISO(obra.data_inicio), "dd/MM/yyyy", { locale: ptBR })}
-                      </p>
+                      <Link href={`/obras/${obra.id}`} className="block">
+                        <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                          <Calendar size={11} />
+                          {format(parseISO(obra.data_inicio), "dd/MM/yyyy", { locale: ptBR })}
+                          {obra.data_previsao_fim && (
+                            <span>→ {format(parseISO(obra.data_previsao_fim), "dd/MM/yyyy", { locale: ptBR })}</span>
+                          )}
+                        </p>
+                      </Link>
                     )}
                   </div>
-                )}
+                </div>
               </div>
-            </Link>
-          ))}
+            )
+          })}
         </div>
       )}
 
