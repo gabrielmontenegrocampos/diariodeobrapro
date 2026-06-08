@@ -1,5 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft, Plus, Image as ImageIcon, Users, AlertTriangle, Pencil, MapPin, Calendar, DollarSign, HardHat, FileText, Navigation } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
@@ -70,7 +71,22 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {/* Card de dados da obra */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4 space-y-2.5">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
+        {/* Foto de capa */}
+        {obra.foto_capa && (
+          <div className="relative w-full h-44">
+            <Image
+              src={obra.foto_capa}
+              alt={obra.nome}
+              fill
+              className="object-cover"
+              unoptimized
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+          </div>
+        )}
+
+        <div className="p-4 space-y-2.5">
         {enderecoCompleto && (
           <div className="flex items-start gap-2">
             <MapPin size={14} className="text-orange-400 shrink-0 mt-0.5" />
@@ -132,6 +148,7 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
           )}
+        </div>
         </div>
       </div>
 
