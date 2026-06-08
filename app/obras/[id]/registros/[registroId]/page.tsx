@@ -2,9 +2,10 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Users, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Users, AlertTriangle, Pencil } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import DeleteRegistroButton from './DeleteRegistroButton'
 
 const climaIcon: Record<string, string> = {
   sol: '☀️', nublado: '🌤️', chuva: '🌧️', tempestade: '⛈️', ventoso: '💨',
@@ -43,7 +44,7 @@ export default async function RegistroPage({
         <Link href={`/obras/${obraId}`} className="p-2 -ml-2 text-gray-400 hover:text-gray-600">
           <ArrowLeft size={20} />
         </Link>
-        <div>
+        <div className="flex-1">
           <h1 className="text-lg font-bold text-gray-900 capitalize">
             {format(parseISO(registro.data), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
           </h1>
@@ -53,6 +54,14 @@ export default async function RegistroPage({
               {registro.temperatura ? ` · ${registro.temperatura}°C` : ''}
             </p>
           )}
+        </div>
+        <div className="flex gap-2">
+          <Link href={`/obras/${obraId}/registros/${registroId}/editar`}>
+            <button className="p-2 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-orange-500 hover:border-orange-300 transition">
+              <Pencil size={16} />
+            </button>
+          </Link>
+          <DeleteRegistroButton registroId={registroId} obraId={obraId} />
         </div>
       </div>
 
