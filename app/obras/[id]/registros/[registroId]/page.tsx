@@ -1,11 +1,11 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft, Users, AlertTriangle, Pencil } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import DeleteRegistroButton from './DeleteRegistroButton'
+import PhotoGallery from '@/components/PhotoGallery'
 
 const climaIcon: Record<string, string> = {
   sol: '☀️', nublado: '🌤️', chuva: '🌧️', tempestade: '⛈️', ventoso: '💨',
@@ -78,13 +78,7 @@ export default async function RegistroPage({
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
               Fotos ({registro.fotos.length})
             </h2>
-            <div className="grid grid-cols-2 gap-2">
-              {registro.fotos.map((f: { id: string; url: string; legenda: string | null }) => (
-                <div key={f.id} className="relative aspect-square">
-                  <Image src={f.url} alt={f.legenda || ''} fill className="object-cover rounded-xl" />
-                </div>
-              ))}
-            </div>
+            <PhotoGallery fotos={registro.fotos} />
           </div>
         )}
 

@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { HardHat, MapPin, Calendar, Users, AlertTriangle, Phone, Mail } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import PhotoGallery from '@/components/PhotoGallery'
 
 const climaIcon: Record<string, string> = {
   sol: '☀️', nublado: '🌤️', chuva: '🌧️', tempestade: '⛈️', ventoso: '💨',
@@ -146,16 +147,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                   )}
 
                   {reg.fotos?.length > 0 && (
-                    <div className={reg.fotos.length === 1
-                      ? 'relative w-full rounded-xl overflow-hidden'
-                      : `grid gap-1.5 rounded-xl overflow-hidden ${reg.fotos.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`
-                    }>
-                      {reg.fotos.map((f: any, i: number) => (
-                        <div key={f.id} className={`relative ${reg.fotos.length === 1 ? 'aspect-[4/3]' : 'aspect-square'}`}>
-                          <Image src={f.url} alt={f.legenda || `Foto ${i + 1}`} fill className="object-cover" unoptimized />
-                        </div>
-                      ))}
-                    </div>
+                    <PhotoGallery fotos={reg.fotos} />
                   )}
 
                   {reg.equipe_dia?.length > 0 && (
