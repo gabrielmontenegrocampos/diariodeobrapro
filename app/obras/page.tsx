@@ -1,7 +1,10 @@
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { Plus, MapPin, Calendar, LogOut, HardHat, Building2, ExternalLink } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -13,25 +16,41 @@ const statusColor: Record<string, string> = {
   concluida: 'bg-gray-100 text-gray-600',
 }
 
-async function signOut() {
-  'use server'
-  const { createClient } = await import('@/lib/supabase/server')
-  const supabase = await createClient()
-  await supabase.auth.signOut()
-  redirect('/login')
-}
+export default function ObrasPage() {
+  const router = useRouter()
+  const supabase = createClient()
+  const [obras, setObras] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-export default async function ObrasPage() {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
-  const userId = session.user.id
+  useEffect(() => {
+    async function load() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { router.replace('/login'); return }
 
-  const { data: obras } = await supabase
-    .from('obras')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+      const { data } = await supabase
+        .from('obras')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+
+      setObras(data || [])
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  async function signOut() {
+    await supabase.auth.signOut()
+    router.replace('/login')
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-400 text-sm">Carregando...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen max-w-lg mx-auto px-4 py-6 pb-28">
@@ -43,22 +62,20 @@ export default async function ObrasPage() {
               <Building2 size={20} />
             </button>
           </Link>
-          <form action={signOut}>
-            <button type="submit" className="p-2 text-gray-400 hover:text-gray-600">
-              <LogOut size={20} />
-            </button>
-          </form>
+          <button onClick={signOut} className="p-2 text-gray-400 hover:text-gray-600">
+            <LogOut size={20} />
+          </button>
         </div>
       </div>
 
-      {(!obras || obras.length === 0) ? (
+      {obras.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
           <p className="text-lg mb-1">Nenhuma obra ainda</p>
           <p className="text-sm">Crie sua primeira obra abaixo</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {obras.map((obra: any) => {
+          {obras.map((obra) => {
             const enderecoCompleto = [obra.logradouro, obra.numero, obra.bairro, obra.cidade, obra.estado]
               .filter(Boolean).join(', ')
             const enderecoExibir = enderecoCompleto || obra.endereco || ''
@@ -69,11 +86,10 @@ export default async function ObrasPage() {
             return (
               <div key={obra.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition overflow-hidden">
                 <div className="flex">
-                  {/* Foto quadrada */}
                   <Link href={`/obras/${obra.id}`} className="shrink-0">
                     <div className="relative w-24 h-24">
                       {obra.foto_capa ? (
-                        <Image src={obra.foto_capa} alt={obra.nome} fill className="object-cover" />
+                        <Image src={obra.foto_capa} alt={obra.nome} fill className="object-cover" unoptimized />
                       ) : (
                         <div className="w-full h-full bg-orange-50 flex items-center justify-center">
                           <HardHat size={28} className="text-orange-300" />
@@ -82,7 +98,6 @@ export default async function ObrasPage() {
                     </div>
                   </Link>
 
-                  {/* Conteúdo */}
                   <div className="flex-1 min-w-0 p-3">
                     <Link href={`/obras/${obra.id}`} className="block">
                       <div className="flex items-start justify-between gap-1 mb-0.5">
@@ -96,8 +111,7 @@ export default async function ObrasPage() {
                       )}
                     </Link>
 
-                    {/* Endereço — abre Google Maps */}
-                    {enderecoExibir && mapsUrl ? (
+                    {enderecoExibir && mapsUrl && (
                       <a
                         href={mapsUrl}
                         target="_blank"
@@ -109,19 +123,16 @@ export default async function ObrasPage() {
                         <span className="line-clamp-1">{enderecoExibir}</span>
                         <ExternalLink size={10} className="shrink-0" />
                       </a>
-                    ) : null}
+                    )}
 
-                    {/* Data */}
                     {obra.data_inicio && (
-                      <Link href={`/obras/${obra.id}`} className="block">
-                        <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                          <Calendar size={11} />
-                          {format(parseISO(obra.data_inicio), "dd/MM/yyyy", { locale: ptBR })}
-                          {obra.data_previsao_fim && (
-                            <span>→ {format(parseISO(obra.data_previsao_fim), "dd/MM/yyyy", { locale: ptBR })}</span>
-                          )}
-                        </p>
-                      </Link>
+                      <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                        <Calendar size={11} />
+                        {format(parseISO(obra.data_inicio), "dd/MM/yyyy", { locale: ptBR })}
+                        {obra.data_previsao_fim && (
+                          <span>→ {format(parseISO(obra.data_previsao_fim), "dd/MM/yyyy", { locale: ptBR })}</span>
+                        )}
+                      </p>
                     )}
                   </div>
                 </div>
