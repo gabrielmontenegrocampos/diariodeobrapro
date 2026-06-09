@@ -70,7 +70,11 @@ export default function ObrasPage() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl font-bold text-gray-900">{isMember ? 'Obras' : 'Minhas Obras'}</h1>
-          <p className="text-xs text-gray-400 mt-0.5">Olá, <span className="font-medium text-gray-600">{userName}</span></p>
+          <Link href="/perfil">
+            <p className="text-xs text-gray-400 mt-0.5 hover:text-orange-500 transition">
+              Olá, <span className="font-medium text-gray-600 hover:text-orange-500">{userName}</span> ✏️
+            </p>
+          </Link>
         </div>
         <div className="flex items-center gap-1">
           {!isMember && (
