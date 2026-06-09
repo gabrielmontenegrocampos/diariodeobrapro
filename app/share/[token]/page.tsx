@@ -15,6 +15,13 @@ const severidadeColor: Record<string, string> = {
   alta: 'bg-red-50 text-red-600 border border-red-200',
 }
 
+type AtivStatus = 'pendente' | 'em_andamento' | 'concluida'
+const ATIV_CFG: Record<AtivStatus, { label: string; cls: string }> = {
+  pendente:     { label: 'Pendente',      cls: 'bg-gray-100 text-gray-500' },
+  em_andamento: { label: 'Em andamento',  cls: 'bg-orange-100 text-orange-700' },
+  concluida:    { label: 'Concluída ✓',   cls: 'bg-green-100 text-green-700' },
+}
+
 export default async function SharePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
   const supabase = createServiceClient()
@@ -23,11 +30,16 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     .from('obras').select('*').eq('share_token', token).single()
   if (!obra) notFound()
 
-  const [{ data: registros }, { data: empresa }] = await Promise.all([
+  const [{ data: registros }, { data: empresa }, { data: atividades }] = await Promise.all([
     supabase.from('registros')
       .select('*, fotos(*), equipe_dia(*), ocorrencias(*)')
       .eq('obra_id', obra.id).order('data', { ascending: false }),
     supabase.from('empresas').select('*').eq('user_id', obra.user_id).maybeSingle(),
+    supabase.from('atividades_obra')
+      .select('id, etapa, descricao, status, ordem')
+      .eq('obra_id', obra.id)
+      .order('ordem', { ascending: true })
+      .order('created_at', { ascending: true }),
   ])
 
   const enderecoObra = [obra.logradouro, obra.numero, obra.bairro, obra.cidade, obra.estado]
@@ -36,6 +48,13 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     ? [empresa.logradouro, empresa.numero, empresa.bairro, empresa.cidade, empresa.estado]
         .filter(Boolean).join(', ')
     : ''
+
+  const hasAtividades = atividades && atividades.length > 0
+  const concluidas = hasAtividades ? atividades.filter((a: any) => a.status === 'concluida').length : 0
+  const emAndamento = hasAtividades ? atividades.filter((a: any) => a.status === 'em_andamento').length : 0
+  const pendentes = hasAtividades ? atividades.length - concluidas - emAndamento : 0
+  const progresso = obra.progresso_atual || 0
+  const progColor = progresso < 30 ? '#ef4444' : progresso < 70 ? '#f97316' : '#22c55e'
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -54,15 +73,15 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                 <MapPin size={11} className="shrink-0" /> {enderecoObra}
               </p>
             )}
-            {obra.progresso_atual > 0 && (
+            {progresso > 0 && (
               <div className="mt-2.5">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-orange-100">Avanço físico</span>
-                  <span className="text-xs font-bold text-white">{obra.progresso_atual}%</span>
+                  <span className="text-xs font-bold text-white">{progresso}%</span>
                 </div>
                 <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
                   <div className="h-full bg-white rounded-full transition-all duration-500"
-                    style={{ width: `${obra.progresso_atual}%` }} />
+                    style={{ width: `${progresso}%` }} />
                 </div>
               </div>
             )}
@@ -122,7 +141,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
           </div>
         )}
 
-        {/* Stats da obra */}
+        {/* Stats */}
         <div className="flex items-center gap-3 text-sm text-gray-500">
           {obra.data_inicio && (
             <span className="flex items-center gap-1.5">
@@ -134,8 +153,66 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
           <span>{registros?.length || 0} registro{registros?.length !== 1 ? 's' : ''}</span>
         </div>
 
-        {/* Card de avanço físico */}
-        {obra.progresso_atual > 0 && (
+        {/* Atividades da Obra (read-only) */}
+        {hasAtividades && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            {/* Header */}
+            <div className="px-4 pt-4 pb-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
+                Atividades da Obra
+              </p>
+              <p className="text-xs text-gray-400">
+                {[
+                  concluidas > 0 && `${concluidas} concluída${concluidas !== 1 ? 's' : ''}`,
+                  emAndamento > 0 && `${emAndamento} em andamento`,
+                  pendentes > 0 && `${pendentes} pendente${pendentes !== 1 ? 's' : ''}`,
+                ].filter(Boolean).join(' · ')}
+              </p>
+            </div>
+
+            {/* Progress bar */}
+            {progresso > 0 && (
+              <div className="px-4 pb-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs text-gray-400">Avanço físico</span>
+                  <span className="text-2xl font-bold" style={{ color: progColor }}>{progresso}%</span>
+                </div>
+                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${progresso}%`, backgroundColor: progColor }} />
+                </div>
+                {obra.data_previsao_fim && (
+                  <p className="text-xs text-gray-400 mt-1.5">
+                    Previsão de conclusão: {format(parseISO(obra.data_previsao_fim), "dd/MM/yyyy")}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* List */}
+            <div className="border-t border-gray-50 divide-y divide-gray-50">
+              {(atividades as any[]).map((a: any, idx: number) => (
+                <div key={a.id} className="flex items-center gap-3 px-4 py-3">
+                  <span className="text-xs text-gray-300 font-mono w-4 shrink-0 text-right">{idx + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium leading-snug ${a.status === 'concluida' ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                      {a.etapa}
+                    </p>
+                    {a.descricao && (
+                      <p className="text-xs text-gray-400 mt-0.5 truncate">{a.descricao}</p>
+                    )}
+                  </div>
+                  <span className={`shrink-0 text-xs px-2.5 py-1.5 rounded-xl font-semibold ${ATIV_CFG[a.status as AtivStatus].cls}`}>
+                    {ATIV_CFG[a.status as AtivStatus].label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Fallback: barra de progresso sem atividades */}
+        {!hasAtividades && progresso > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -146,17 +223,11 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                   </p>
                 )}
               </div>
-              <span className="text-3xl font-bold" style={{
-                color: obra.progresso_atual < 30 ? '#ef4444' : obra.progresso_atual < 70 ? '#f97316' : '#22c55e'
-              }}>
-                {obra.progresso_atual}%
-              </span>
+              <span className="text-3xl font-bold" style={{ color: progColor }}>{progresso}%</span>
             </div>
             <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-500" style={{
-                width: `${obra.progresso_atual}%`,
-                backgroundColor: obra.progresso_atual < 30 ? '#ef4444' : obra.progresso_atual < 70 ? '#f97316' : '#22c55e'
-              }} />
+              <div className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${progresso}%`, backgroundColor: progColor }} />
             </div>
             <div className="flex justify-between text-xs text-gray-300 mt-1">
               <span>0%</span><span>50%</span><span>100%</span>
@@ -184,6 +255,13 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                 </div>
 
                 <div className="px-4 pb-4 space-y-3">
+                  {reg.servicos_executados && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Serviços executados</p>
+                      <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{reg.servicos_executados}</p>
+                    </div>
+                  )}
+
                   {reg.descricao && (
                     <p className="text-sm text-gray-700 leading-relaxed">{reg.descricao}</p>
                   )}
