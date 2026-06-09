@@ -105,39 +105,46 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
 
       if (regError) throw new Error(regError.message)
 
-      for (const foto of fotos) {
-        const ext = foto.file.name.split('.').pop()
-        const path = `${session.user.id}/${registro.id}/${Date.now()}.${ext}`
+      // Tudo em paralelo: cada foto + equipe + ocorrências ao mesmo tempo
+      const equipeValida = equipe.filter(w => w.nome.trim())
+      const ocorrValidas = ocorrencias.filter(o => o.descricao.trim())
+
+      const fotoPromises = fotos.map(async (foto) => {
+        const ext  = foto.file.name.split('.').pop() || 'jpg'
+        // Inclui random para evitar colisão quando múltiplas fotos sobem no mesmo ms
+        const path = `${session.user.id}/${registro.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
         const { data: upload } = await supabase.storage.from('fotos').upload(path, foto.file)
         if (upload) {
           const { data: { publicUrl } } = supabase.storage.from('fotos').getPublicUrl(path)
           await supabase.from('fotos').insert({ registro_id: registro.id, url: publicUrl, tipo: foto.tipo })
         }
-      }
+      })
 
-      const equipeValida = equipe.filter(w => w.nome.trim())
+      const tarefas: Promise<any>[] = [...fotoPromises]
+
       if (equipeValida.length > 0) {
-        await supabase.from('equipe_dia').insert(
+        tarefas.push(supabase.from('equipe_dia').insert(
           equipeValida.map(w => ({
             registro_id: registro.id,
             nome: w.nome,
             funcao: w.funcao || null,
             horas: w.horas ? parseFloat(w.horas) : null,
           }))
-        )
+        ))
       }
 
-      const ocorrValidas = ocorrencias.filter(o => o.descricao.trim())
       if (ocorrValidas.length > 0) {
-        await supabase.from('ocorrencias').insert(
+        tarefas.push(supabase.from('ocorrencias').insert(
           ocorrValidas.map(o => ({
             registro_id: registro.id,
             descricao: o.descricao,
             tipo: o.tipo,
             severidade: o.severidade,
           }))
-        )
+        ))
       }
+
+      await Promise.all(tarefas)
 
       router.push(`/obras/${obraId}`)
     } catch (err: any) {

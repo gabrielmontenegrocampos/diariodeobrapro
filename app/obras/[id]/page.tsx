@@ -28,20 +28,18 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) redirect('/login')
 
-  // RLS garante acesso: dono ou membro ativo da equipe
-  const { data: obra } = await supabase
-    .from('obras').select('*')
-    .eq('id', id).single()
+  // Busca obra + registros em paralelo (independentes entre si)
+  const [{ data: obra }, { data: registros }] = await Promise.all([
+    supabase.from('obras').select('*').eq('id', id).single(),
+    supabase.from('registros')
+      .select('*, fotos(id, url), equipe_dia(id), ocorrencias(id)')
+      .eq('obra_id', id)
+      .order('data', { ascending: false }),
+  ])
 
   if (!obra) notFound()
 
   const isOwner = obra.user_id === session.user.id
-
-  const { data: registros } = await supabase
-    .from('registros')
-    .select('*, fotos(id, url), equipe_dia(id), ocorrencias(id)')
-    .eq('obra_id', id)
-    .order('data', { ascending: false })
 
   const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL || ''}/share/${obra.share_token}`
 

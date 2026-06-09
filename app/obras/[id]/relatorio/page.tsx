@@ -32,13 +32,17 @@ export default function RelatorioPage() {
   async function gerarPDF() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      const { data: obra } = await supabase.from('obras').select('*').eq('id', obraId).single()
-      const { data: registros } = await supabase
-        .from('registros').select('*, fotos(*), equipe_dia(*), ocorrencias(*)')
-        .eq('obra_id', obraId).order('data', { ascending: true })
-      const { data: empresa } = session
-        ? await supabase.from('empresas').select('*').eq('user_id', session.user.id).maybeSingle()
-        : { data: null }
+
+      // Busca obra, registros e empresa em paralelo
+      const [{ data: obra }, { data: registros }, { data: empresa }] = await Promise.all([
+        supabase.from('obras').select('*').eq('id', obraId).single(),
+        supabase.from('registros')
+          .select('*, fotos(*), equipe_dia(*), ocorrencias(*)')
+          .eq('obra_id', obraId).order('data', { ascending: true }),
+        session
+          ? supabase.from('empresas').select('*').eq('user_id', session.user.id).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+      ])
 
       setNomeObra(obra?.nome || '')
 

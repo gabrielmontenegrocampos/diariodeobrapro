@@ -6,6 +6,10 @@ import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import { User, Settings, Users, LogOut, X } from 'lucide-react'
 
+// Cache por 10 min no sessionStorage — evita 2 queries a cada navegação
+const CACHE_KEY = 'diario_appbar_v1'
+const CACHE_TTL = 10 * 60 * 1000
+
 export default function AppBarUserBadge() {
   const supabase = createClient()
   const router   = useRouter()
@@ -27,18 +31,44 @@ export default function AppBarUserBadge() {
       setNome(fallback)
       setInitials(fallback.slice(0, 2).toUpperCase())
 
+      // ── Tenta usar cache antes de ir ao banco ────────────────────
+      try {
+        const raw = sessionStorage.getItem(`${CACHE_KEY}_${session.user.id}`)
+        if (raw) {
+          const { data: c, ts } = JSON.parse(raw)
+          if (Date.now() - ts < CACHE_TTL) {
+            setNome(c.nome)
+            setInitials(c.initials)
+            setFotoUrl(c.fotoUrl)
+            setIsOwner(c.isOwner)
+            return // ← sem query ao banco
+          }
+        }
+      } catch {}
+
+      // ── Cache miss: busca profile + check de membro em paralelo ──
       const [{ data: profile }, { data: memberCheck }] = await Promise.all([
         supabase.from('profiles').select('nome, foto_url').eq('id', session.user.id).maybeSingle(),
         supabase.from('team_members').select('id').eq('member_id', session.user.id).eq('status', 'active').limit(1),
       ])
 
-      if (profile) {
-        const n = profile.nome || fallback
-        setNome(n)
-        setInitials(n.slice(0, 2).toUpperCase())
-        if (profile.foto_url) setFotoUrl(profile.foto_url)
-      }
-      setIsOwner(!(memberCheck && memberCheck.length > 0))
+      const n     = profile?.nome || fallback
+      const foto  = profile?.foto_url || null
+      const ini   = n.slice(0, 2).toUpperCase()
+      const owner = !(memberCheck && memberCheck.length > 0)
+
+      setNome(n)
+      setInitials(ini)
+      setFotoUrl(foto)
+      setIsOwner(owner)
+
+      // ── Persiste no cache ─────────────────────────────────────────
+      try {
+        sessionStorage.setItem(`${CACHE_KEY}_${session.user.id}`, JSON.stringify({
+          data: { nome: n, initials: ini, fotoUrl: foto, isOwner: owner },
+          ts: Date.now(),
+        }))
+      } catch {}
     }
     load()
   }, [])

@@ -37,20 +37,15 @@ export default function ObrasPage() {
       const name = session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário'
       setUserName(name)
 
-      // Verifica se é membro (não dono)
-      const { data: memberCheck } = await supabase
-        .from('team_members')
-        .select('id')
-        .eq('member_id', session.user.id)
-        .eq('status', 'active')
-        .limit(1)
+      // Busca em paralelo: check de membro + lista de obras
+      const [{ data: memberCheck }, { data: obrasData }] = await Promise.all([
+        supabase.from('team_members').select('id')
+          .eq('member_id', session.user.id).eq('status', 'active').limit(1),
+        supabase.from('obras').select('*')
+          .order('created_at', { ascending: false }),
+      ])
       setIsMember(!!(memberCheck && memberCheck.length > 0))
-
-      // Busca obras (RLS cuida da visibilidade)
-      const { data } = await supabase
-        .from('obras').select('*')
-        .order('created_at', { ascending: false })
-      setObras(data || [])
+      setObras(obrasData || [])
       setLoading(false)
     }
     load()
