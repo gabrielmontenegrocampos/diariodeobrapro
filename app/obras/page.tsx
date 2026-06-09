@@ -24,6 +24,8 @@ export default function ObrasPage() {
   const [obras, setObras] = useState<any[]>([])
   const [userId, setUserId] = useState('')
   const [loading, setLoading] = useState(true)
+  const [isMember, setIsMember] = useState(false)
+  const [userName, setUserName] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -31,22 +33,20 @@ export default function ObrasPage() {
       if (!session) { router.replace('/login'); return }
       setUserId(session.user.id)
 
-      // Ativa convites pendentes para usuários que já tinham conta
-      const { data: pending } = await supabase
-        .from('team_members')
-        .select('id, owner_id')
-        .eq('member_email', session.user.email!)
-        .eq('status', 'pending')
-      if (pending && pending.length > 0) {
-        for (const inv of pending) {
-          await supabase.rpc('activate_pending_invite', {
-            p_owner_id: inv.owner_id,
-            p_email: session.user.email,
-          })
-        }
-      }
+      // Nome do usuário
+      const name = session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário'
+      setUserName(name)
 
-      // Busca obras próprias + compartilhadas (RLS cuida da visibilidade)
+      // Verifica se é membro (não dono)
+      const { data: memberCheck } = await supabase
+        .from('team_members')
+        .select('id')
+        .eq('member_id', session.user.id)
+        .eq('status', 'active')
+        .limit(1)
+      setIsMember(!!(memberCheck && memberCheck.length > 0))
+
+      // Busca obras (RLS cuida da visibilidade)
       const { data } = await supabase
         .from('obras').select('*')
         .order('created_at', { ascending: false })
@@ -68,19 +68,26 @@ export default function ObrasPage() {
       <AppBar />
       <div className="max-w-lg mx-auto px-4 py-5">
       <div className="flex items-center justify-between mb-5">
-        <h1 className="text-xl font-bold text-gray-900">Minhas Obras</h1>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">{isMember ? 'Obras' : 'Minhas Obras'}</h1>
+          <p className="text-xs text-gray-400 mt-0.5">Olá, <span className="font-medium text-gray-600">{userName}</span></p>
+        </div>
         <div className="flex items-center gap-1">
-          <Link href="/equipe">
-            <button className="p-2 text-gray-400 hover:text-orange-500 transition" title="Equipe">
-              <Users size={20} />
-            </button>
-          </Link>
-          <Link href="/empresa">
-            <button className="p-2 text-gray-400 hover:text-orange-500 transition" title="Configurações da empresa">
-              <Settings size={20} />
-            </button>
-          </Link>
-          <button onClick={signOut} className="p-2 text-gray-400 hover:text-gray-600">
+          {!isMember && (
+            <>
+              <Link href="/equipe">
+                <button className="p-2 text-gray-400 hover:text-orange-500 transition" title="Equipe">
+                  <Users size={20} />
+                </button>
+              </Link>
+              <Link href="/empresa">
+                <button className="p-2 text-gray-400 hover:text-orange-500 transition" title="Empresa">
+                  <Settings size={20} />
+                </button>
+              </Link>
+            </>
+          )}
+          <button onClick={signOut} className="p-2 text-gray-400 hover:text-gray-600" title="Sair">
             <LogOut size={20} />
           </button>
         </div>
@@ -172,12 +179,14 @@ export default function ObrasPage() {
         </div>
       )}
 
-      <Link href="/obras/nova">
-        <button className="fixed bottom-6 right-6 bg-orange-500 hover:bg-orange-600 text-white rounded-full p-4 shadow-lg flex items-center gap-2 transition">
-          <Plus size={22} />
-          <span className="font-semibold pr-1">Nova Obra</span>
-        </button>
-      </Link>
+      {!isMember && (
+        <Link href="/obras/nova">
+          <button className="fixed bottom-6 right-6 bg-orange-500 hover:bg-orange-600 text-white rounded-full p-4 shadow-lg flex items-center gap-2 transition">
+            <Plus size={22} />
+            <span className="font-semibold pr-1">Nova Obra</span>
+          </button>
+        </Link>
+      )}
       </div>
     </div>
   )

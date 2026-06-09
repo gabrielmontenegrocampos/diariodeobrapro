@@ -34,6 +34,10 @@ export default function EquipePage() {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.replace('/login'); return }
+      const { data: memberCheck } = await supabase
+        .from('team_members').select('id')
+        .eq('member_id', session.user.id).eq('status', 'active').limit(1)
+      if (memberCheck && memberCheck.length > 0) { router.replace('/obras'); return }
       setOwnerId(session.user.id)
       await loadMembers(session.user.id)
       setFetching(false)

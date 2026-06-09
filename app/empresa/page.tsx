@@ -46,6 +46,10 @@ export default function EmpresaPage() {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
+      const { data: memberCheck } = await supabase
+        .from('team_members').select('id')
+        .eq('member_id', session.user.id).eq('status', 'active').limit(1)
+      if (memberCheck && memberCheck.length > 0) { router.replace('/obras'); return }
       const { data } = await supabase.from('empresas').select('*').eq('user_id', session.user.id).maybeSingle()
       if (data) {
         setTipo(data.tipo || 'juridica')
