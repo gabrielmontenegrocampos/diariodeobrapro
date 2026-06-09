@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, Trash2, ChevronUp, ChevronDown, ChevronRight } from 'lucide-react'
 
 type Atividade = {
   id: string
@@ -12,7 +12,6 @@ type Atividade = {
   ordem: number
   parent_id: string | null
 }
-
 type Group = { parent: Atividade; children: Atividade[] }
 
 const S = {
@@ -24,11 +23,11 @@ const S = {
 const sv  = (s: string) => s === 'concluida' ? 100 : s === 'em_andamento' ? 50 : 0
 const clr = (p: number) => p < 30 ? '#ef4444' : p < 70 ? '#f97316' : '#22c55e'
 
-function gProg(g: Group): number {
+function gProg(g: Group) {
   if (!g.children.length) return sv(g.parent.status)
   return Math.round(g.children.reduce((a, c) => a + sv(c.status), 0) / g.children.length)
 }
-function totalProg(gs: Group[]): number {
+function totalProg(gs: Group[]) {
   if (!gs.length) return 0
   return Math.round(gs.reduce((a, g) => a + gProg(g), 0) / gs.length)
 }
@@ -40,15 +39,19 @@ function buildGroups(list: Atividade[]): Group[] {
   }))
 }
 
+// ~5% more grey than bg-gray-50 (#f9fafb)
+const SUB_BG = '#f0f1f2'
+
 export default function AtividadesSection({ obraId, isOwner }: { obraId: string; isOwner: boolean }) {
   const supabase = createClient()
 
-  const [all,           setAll]           = useState<Atividade[]>([])
-  const [showAddParent, setShowAddParent] = useState(false)
-  const [addingSubTo,   setAddingSubTo]   = useState<string | null>(null)
-  const [newEtapa,      setNewEtapa]      = useState('')
-  const [newDesc,       setNewDesc]       = useState('')
-  const [saving,        setSaving]        = useState(false)
+  const [all,          setAll]          = useState<Atividade[]>([])
+  const [expanded,     setExpanded]     = useState<Set<string>>(new Set())
+  const [showAddForm,  setShowAddForm]  = useState(false)   // bottom "add parent" form
+  const [addingSubTo,  setAddingSubTo]  = useState<string | null>(null)
+  const [newEtapa,     setNewEtapa]     = useState('')
+  const [newDesc,      setNewDesc]      = useState('')
+  const [saving,       setSaving]       = useState(false)
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -80,29 +83,19 @@ export default function AtividadesSection({ obraId, isOwner }: { obraId: string;
       : all.filter(a => !a.parent_id)
     const { data, error } = await supabase
       .from('atividades_obra')
-      .insert({
-        obra_id:   obraId,
-        etapa:     newEtapa.trim(),
-        descricao: newDesc.trim() || null,
-        status:    'pendente',
-        ordem:     siblings.length,
-        parent_id: parentId || null,
-      })
+      .insert({ obra_id: obraId, etapa: newEtapa.trim(), descricao: newDesc.trim() || null,
+                status: 'pendente', ordem: siblings.length, parent_id: parentId || null })
       .select().single()
     if (!error && data) {
       const updated = [...all, data as Atividade]
       setAll(updated)
       await syncProgress(updated)
     }
-    setNewEtapa('')
-    setNewDesc('')
-    setShowAddParent(false)
-    setAddingSubTo(null)
+    setNewEtapa(''); setNewDesc(''); setShowAddForm(false); setAddingSubTo(null)
     setSaving(false)
   }
 
   async function deleteActivity(id: string) {
-    // DB cascade deletes children; filter both from local state
     const childIds = all.filter(a => a.parent_id === id).map(a => a.id)
     await supabase.from('atividades_obra').delete().eq('id', id)
     const updated = all.filter(a => a.id !== id && !childIds.includes(a.id))
@@ -114,52 +107,43 @@ export default function AtividadesSection({ obraId, isOwner }: { obraId: string;
     const gs = buildGroups(all)
     const newIdx = idx + dir
     if (newIdx < 0 || newIdx >= gs.length) return
-    // Swap positions then reassign ordems
-    const reordered = [...gs]
-    ;[reordered[idx], reordered[newIdx]] = [reordered[newIdx], reordered[idx]]
-    await Promise.all(
-      reordered.map((g, i) =>
-        supabase.from('atividades_obra').update({ ordem: i }).eq('id', g.parent.id)
-      )
-    )
+    const reordered = [...gs];
+    [reordered[idx], reordered[newIdx]] = [reordered[newIdx], reordered[idx]]
+    await Promise.all(reordered.map((g, i) =>
+      supabase.from('atividades_obra').update({ ordem: i }).eq('id', g.parent.id)
+    ))
     const idToOrdem = Object.fromEntries(reordered.map((g, i) => [g.parent.id, i]))
-    setAll(prev => prev.map(a => (a.id in idToOrdem ? { ...a, ordem: idToOrdem[a.id] } : a)))
+    setAll(prev => prev.map(a => a.id in idToOrdem ? { ...a, ordem: idToOrdem[a.id] } : a))
+  }
+
+  function toggleExpand(id: string) {
+    setExpanded(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+
+  function openAddParent() {
+    setShowAddForm(true); setAddingSubTo(null); setNewEtapa(''); setNewDesc('')
   }
 
   function openAddSub(parentId: string) {
-    setAddingSubTo(parentId)
-    setShowAddParent(false)
-    setNewEtapa('')
-    setNewDesc('')
+    setAddingSubTo(parentId); setShowAddForm(false); setNewEtapa(''); setNewDesc('')
+    setExpanded(prev => new Set([...prev, parentId])) // auto-expand
   }
-  function openAddParent() {
-    setShowAddParent(v => !v)
-    setAddingSubTo(null)
-    setNewEtapa('')
-    setNewDesc('')
-  }
+
   function cancelForm() {
-    setShowAddParent(false)
-    setAddingSubTo(null)
-    setNewEtapa('')
-    setNewDesc('')
+    setShowAddForm(false); setAddingSubTo(null); setNewEtapa(''); setNewDesc('')
   }
 
   function InlineForm({ parentId }: { parentId?: string }) {
     return (
       <div className="space-y-2 pt-2 pb-1">
-        <input
-          type="text" value={newEtapa} onChange={e => setNewEtapa(e.target.value)}
+        <input type="text" value={newEtapa} onChange={e => setNewEtapa(e.target.value)}
           placeholder={parentId ? 'Nome da sub-atividade *' : 'Nome da atividade *'}
           className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && addActivity(parentId)}
-          autoFocus
-        />
-        <input
-          type="text" value={newDesc} onChange={e => setNewDesc(e.target.value)}
+          autoFocus />
+        <input type="text" value={newDesc} onChange={e => setNewDesc(e.target.value)}
           placeholder="Descrição (opcional)"
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-        />
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
         <div className="flex gap-2">
           <button onClick={cancelForm}
             className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-500 font-medium">
@@ -182,25 +166,16 @@ export default function AtividadesSection({ obraId, isOwner }: { obraId: string;
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
       {/* Header */}
-      <div className="px-4 pt-4 pb-3 flex items-center justify-between">
-        <div>
-          <h2 className="text-sm font-bold text-gray-800">Atividades da Obra</h2>
-          {groups.length > 0 && (
-            <p className="text-xs text-gray-400 mt-0.5">
-              {done}/{groups.length} etapa{groups.length !== 1 ? 's' : ''} concluída{groups.length !== 1 ? 's' : ''}
-            </p>
-          )}
-        </div>
-        {isOwner && (
-          <button onClick={openAddParent}
-            className="w-8 h-8 flex items-center justify-center text-orange-500 hover:bg-orange-50 rounded-xl transition"
-            title="Nova atividade">
-            <Plus size={18} />
-          </button>
+      <div className="px-4 pt-4 pb-3">
+        <h2 className="text-sm font-bold text-gray-800">Atividades da Obra</h2>
+        {groups.length > 0 && (
+          <p className="text-xs text-gray-400 mt-0.5">
+            {done}/{groups.length} etapa{groups.length !== 1 ? 's' : ''} concluída{groups.length !== 1 ? 's' : ''}
+          </p>
         )}
       </div>
 
-      {/* Overall progress bar */}
+      {/* Overall progress */}
       {groups.length > 0 && (
         <div className="px-4 pb-3">
           <div className="flex items-center justify-between mb-1.5">
@@ -214,90 +189,98 @@ export default function AtividadesSection({ obraId, isOwner }: { obraId: string;
         </div>
       )}
 
-      {/* Add parent form */}
-      {showAddParent && isOwner && (
-        <div className="px-4 pb-3 border-t border-gray-50">
-          <InlineForm />
-        </div>
-      )}
-
       {/* Empty state */}
-      {groups.length === 0 && !showAddParent && (
-        <div className="px-4 pb-4 text-center">
+      {groups.length === 0 && (
+        <div className="px-4 pb-2 text-center">
           <p className="text-sm text-gray-400">
-            {isOwner ? 'Cadastre as etapas do contrato clicando em +' : 'Nenhuma atividade cadastrada'}
+            {isOwner ? 'Cadastre as etapas do contrato abaixo' : 'Nenhuma atividade cadastrada'}
           </p>
         </div>
       )}
 
       {/* Groups */}
       {groups.length > 0 && (
-        <div className="border-t border-gray-50">
+        <div className="border-t border-gray-100">
           {groups.map((g, gi) => {
-            const gp          = gProg(g)
-            const hasChildren = g.children.length > 0
-            const isAddingSub = addingSubTo === g.parent.id
+            const gp         = gProg(g)
+            const hasKids    = g.children.length > 0
+            const isExp      = expanded.has(g.parent.id)
+            const isAddSub   = addingSubTo === g.parent.id
 
             return (
               <div key={g.parent.id} className="border-b border-gray-50 last:border-b-0">
 
-                {/* ── Parent row ── */}
-                <div className="flex items-center gap-2 px-4 py-3">
+                {/* Parent row */}
+                <div className="flex items-center gap-1.5 px-3 py-3">
 
-                  {/* ↑↓ reorder */}
+                  {/* Chevron expand/collapse */}
+                  <button
+                    onClick={() => hasKids && toggleExpand(g.parent.id)}
+                    className={`shrink-0 w-5 h-5 flex items-center justify-center rounded transition-colors ${hasKids ? 'text-gray-400 hover:text-gray-600' : 'text-transparent pointer-events-none'}`}
+                  >
+                    <ChevronRight size={14}
+                      className={`transition-transform duration-200 ${isExp ? 'rotate-90' : ''}`} />
+                  </button>
+
+                  {/* Reorder ↑↓ */}
                   {isOwner && (
                     <div className="flex flex-col shrink-0">
                       <button onClick={() => moveParent(gi, -1)} disabled={gi === 0}
                         className="p-0.5 text-gray-200 hover:text-gray-500 disabled:opacity-20 transition">
-                        <ChevronUp size={14} />
+                        <ChevronUp size={13} />
                       </button>
                       <button onClick={() => moveParent(gi, 1)} disabled={gi === groups.length - 1}
                         className="p-0.5 text-gray-200 hover:text-gray-500 disabled:opacity-20 transition">
-                        <ChevronDown size={14} />
+                        <ChevronDown size={13} />
                       </button>
                     </div>
                   )}
 
                   {/* Index */}
-                  <span className="text-xs text-gray-300 font-mono w-4 text-right shrink-0">{gi + 1}</span>
+                  <span className="text-xs text-gray-300 font-mono w-4 text-right shrink-0 select-none">
+                    {gi + 1}
+                  </span>
 
-                  {/* Name + mini bar (if has children) */}
-                  <div className="flex-1 min-w-0">
+                  {/* Name + mini bar — clickable to toggle */}
+                  <div className="flex-1 min-w-0 cursor-pointer"
+                    onClick={() => hasKids && toggleExpand(g.parent.id)}>
                     <p className={`text-sm font-semibold leading-snug ${gp === 100 ? 'line-through text-gray-400' : 'text-gray-800'}`}>
                       {g.parent.etapa}
                     </p>
-                    {g.parent.descricao && (
+                    {g.parent.descricao && !hasKids && (
                       <p className="text-xs text-gray-400 truncate mt-0.5">{g.parent.descricao}</p>
                     )}
-                    {hasChildren && (
+                    {hasKids && (
                       <div className="flex items-center gap-2 mt-1.5">
                         <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                           <div className="h-full rounded-full transition-all"
                             style={{ width: `${gp}%`, backgroundColor: clr(gp) }} />
                         </div>
-                        <span className="text-xs font-bold shrink-0" style={{ color: clr(gp) }}>{gp}%</span>
+                        <span className="text-xs font-bold shrink-0" style={{ color: clr(gp) }}>
+                          {gp}%
+                        </span>
                       </div>
                     )}
                   </div>
 
-                  {/* Status (only when no children) */}
-                  {!hasChildren && (
+                  {/* Status badge (leaf only) */}
+                  {!hasKids && (
                     <button onClick={() => updateStatus(g.parent.id, g.parent.status)}
                       className={`shrink-0 text-xs px-2.5 py-1.5 rounded-xl font-semibold transition active:scale-95 ${S[g.parent.status].cls}`}>
                       {S[g.parent.status].label}
                     </button>
                   )}
 
-                  {/* + sub-activity */}
+                  {/* + sub */}
                   {isOwner && (
-                    <button onClick={() => isAddingSub ? cancelForm() : openAddSub(g.parent.id)}
+                    <button onClick={() => isAddSub ? cancelForm() : openAddSub(g.parent.id)}
                       className="shrink-0 p-1.5 text-gray-300 hover:text-orange-400 hover:bg-orange-50 rounded-lg transition"
                       title="Adicionar sub-atividade">
                       <Plus size={13} />
                     </button>
                   )}
 
-                  {/* Delete parent */}
+                  {/* Delete */}
                   {isOwner && (
                     <button onClick={() => deleteActivity(g.parent.id)}
                       className="shrink-0 text-gray-200 hover:text-red-400 transition p-1">
@@ -306,41 +289,69 @@ export default function AtividadesSection({ obraId, isOwner }: { obraId: string;
                   )}
                 </div>
 
-                {/* ── Sub-activities ── */}
-                {g.children.map(child => (
-                  <div key={child.id}
-                    className="flex items-center gap-2 pl-12 pr-4 py-2.5 bg-gray-50/60 border-t border-gray-50">
-                    <span className="text-xs text-gray-300 shrink-0 select-none">└</span>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-xs font-medium ${child.status === 'concluida' ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-                        {child.etapa}
-                      </p>
-                      {child.descricao && (
-                        <p className="text-xs text-gray-400 truncate mt-0.5">{child.descricao}</p>
-                      )}
-                    </div>
-                    <button onClick={() => updateStatus(child.id, child.status)}
-                      className={`shrink-0 text-xs px-2 py-1 rounded-lg font-semibold transition active:scale-95 ${S[child.status].cls}`}>
-                      {S[child.status].label}
-                    </button>
-                    {isOwner && (
-                      <button onClick={() => deleteActivity(child.id)}
-                        className="shrink-0 text-gray-200 hover:text-red-400 transition p-1">
-                        <Trash2 size={12} />
-                      </button>
-                    )}
-                  </div>
-                ))}
+                {/* Sub-activities (collapsible) */}
+                {isExp && (
+                  <>
+                    {g.children.map(child => (
+                      <div key={child.id}
+                        className="flex items-center gap-2 pl-12 pr-3 py-2.5 border-t border-gray-100"
+                        style={{ backgroundColor: SUB_BG }}>
+                        <span className="text-xs text-gray-300 shrink-0 select-none">└</span>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs font-medium ${child.status === 'concluida' ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                            {child.etapa}
+                          </p>
+                          {child.descricao && (
+                            <p className="text-xs text-gray-400 truncate mt-0.5">{child.descricao}</p>
+                          )}
+                        </div>
+                        <button onClick={() => updateStatus(child.id, child.status)}
+                          className={`shrink-0 text-xs px-2 py-1 rounded-lg font-semibold transition active:scale-95 ${S[child.status].cls}`}>
+                          {S[child.status].label}
+                        </button>
+                        {isOwner && (
+                          <button onClick={() => deleteActivity(child.id)}
+                            className="shrink-0 text-gray-200 hover:text-red-400 transition p-1">
+                            <Trash2 size={12} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
 
-                {/* ── Add sub form ── */}
-                {isAddingSub && isOwner && (
-                  <div className="pl-12 pr-4 pb-3 pt-1 bg-gray-50/60 border-t border-gray-50">
+                    {/* Add sub form */}
+                    {isAddSub && isOwner && (
+                      <div className="pl-12 pr-3 pb-3 pt-1 border-t border-gray-100"
+                        style={{ backgroundColor: SUB_BG }}>
+                        <InlineForm parentId={g.parent.id} />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Add sub form when collapsed but triggered */}
+                {!isExp && isAddSub && isOwner && (
+                  <div className="pl-12 pr-3 pb-3 pt-1 border-t border-gray-100"
+                    style={{ backgroundColor: SUB_BG }}>
                     <InlineForm parentId={g.parent.id} />
                   </div>
                 )}
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Bottom: add parent form or button */}
+      {isOwner && (
+        <div className="px-4 py-3 border-t border-gray-50">
+          {showAddForm ? (
+            <InlineForm />
+          ) : (
+            <button onClick={openAddParent}
+              className="w-full py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 font-medium hover:border-orange-300 hover:text-orange-500 transition flex items-center justify-center gap-1.5">
+              <Plus size={15} /> Adicionar atividade
+            </button>
+          )}
         </div>
       )}
     </div>
