@@ -35,6 +35,8 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
   const [fotos, setFotos] = useState<{ file: File; preview: string; tipo: string }[]>([])
   const [equipe, setEquipe] = useState<WorkerRow[]>([{ nome: '', funcao: '', horas: '' }])
   const [ocorrencias, setOcorrencias] = useState<OcorrenciaRow[]>([])
+  const [turno, setTurno] = useState('')
+  const [servicosExecutados, setServicosExecutados] = useState('')
   const [progresso, setProgresso] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -96,6 +98,8 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
           clima: clima || null,
           temperatura: temperatura ? parseInt(temperatura) : null,
           descricao: descricao || null,
+          turno: turno || null,
+          servicos_executados: servicosExecutados || null,
           progresso: progresso !== null ? progresso : null,
         })
         .select()
@@ -174,6 +178,17 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Turno</label>
+            <div className="flex gap-2">
+              {['Manhã', 'Tarde', 'Integral'].map(t => (
+                <button key={t} type="button" onClick={() => setTurno(turno === t ? '' : t)}
+                  className={`flex-1 py-2 rounded-xl text-sm border transition ${turno === t ? 'bg-orange-500 text-white border-orange-500' : 'bg-white border-gray-200 text-gray-700 hover:border-orange-300'}`}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Clima</label>
             <div className="flex flex-wrap gap-2">
               {climaOptions.map(opt => (
@@ -211,6 +226,18 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
             value={descricao}
             onChange={e => setDescricao(e.target.value)}
             placeholder="Descreva as atividades realizadas no dia..."
+            rows={4}
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+          />
+        </div>
+
+        {/* Serviços executados */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Serviços executados</label>
+          <textarea
+            value={servicosExecutados}
+            onChange={e => setServicosExecutados(e.target.value)}
+            placeholder={"Ex:\n- Concretagem da laje do 2º pavimento\n- Assentamento de alvenaria bloco A\n- Instalação elétrica sala 03"}
             rows={4}
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
           />

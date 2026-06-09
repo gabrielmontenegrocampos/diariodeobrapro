@@ -51,12 +51,19 @@ export default async function RegistroPage({
           <h1 className="text-lg font-bold text-gray-900 capitalize">
             {format(parseISO(registro.data), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
           </h1>
-          {registro.clima && (
-            <p className="text-sm text-gray-500">
-              {climaIcon[registro.clima]} {registro.clima.charAt(0).toUpperCase() + registro.clima.slice(1)}
-              {registro.temperatura ? ` · ${registro.temperatura}°C` : ''}
-            </p>
-          )}
+          <div className="flex items-center gap-2 flex-wrap mt-0.5">
+            {registro.turno && (
+              <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
+                {registro.turno}
+              </span>
+            )}
+            {registro.clima && (
+              <span className="text-sm text-gray-500">
+                {climaIcon[registro.clima]} {registro.clima.charAt(0).toUpperCase() + registro.clima.slice(1)}
+                {registro.temperatura ? ` · ${registro.temperatura}°C` : ''}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex gap-2">
           <Link href={`/obras/${obraId}/registros/${registroId}/editar`}>
@@ -69,10 +76,34 @@ export default async function RegistroPage({
       </div>
 
       <div className="space-y-4">
+        {registro.servicos_executados && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Serviços executados</h2>
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{registro.servicos_executados}</p>
+          </div>
+        )}
+
         {registro.descricao && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Atividades do dia</h2>
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Descrição do dia</h2>
             <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{registro.descricao}</p>
+          </div>
+        )}
+
+        {registro.progresso !== null && registro.progresso !== undefined && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Avanço físico</h2>
+              <span className="text-lg font-bold" style={{ color: registro.progresso < 30 ? '#ef4444' : registro.progresso < 70 ? '#f97316' : '#22c55e' }}>
+                {registro.progresso}%
+              </span>
+            </div>
+            <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full" style={{
+                width: `${registro.progresso}%`,
+                backgroundColor: registro.progresso < 30 ? '#ef4444' : registro.progresso < 70 ? '#f97316' : '#22c55e'
+              }} />
+            </div>
           </div>
         )}
 

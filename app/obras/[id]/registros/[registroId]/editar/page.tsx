@@ -32,9 +32,11 @@ export default function EditarRegistroPage({ params }: { params: Promise<{ id: s
   const [error, setError] = useState('')
 
   const [data, setData] = useState('')
+  const [turno, setTurno] = useState('')
   const [clima, setClima] = useState('')
   const [temperatura, setTemperatura] = useState('')
   const [descricao, setDescricao] = useState('')
+  const [servicosExecutados, setServicosExecutados] = useState('')
   const [fotosExistentes, setFotosExistentes] = useState<FotoExistente[]>([])
   const [fotosRemovidas, setFotosRemovidas] = useState<string[]>([])
   const [fotasNovas, setFotasNovas] = useState<{ file: File; preview: string; tipo: string }[]>([])
@@ -51,9 +53,11 @@ export default function EditarRegistroPage({ params }: { params: Promise<{ id: s
 
       if (reg) {
         setData(reg.data)
+        setTurno(reg.turno || '')
         setClima(reg.clima || '')
         setTemperatura(reg.temperatura?.toString() || '')
         setDescricao(reg.descricao || '')
+        setServicosExecutados(reg.servicos_executados || '')
         setFotosExistentes(reg.fotos || [])
         setEquipe((reg.equipe_dia || []).map((w: any) => ({
           id: w.id, nome: w.nome, funcao: w.funcao || '', horas: w.horas?.toString() || '',
@@ -103,9 +107,11 @@ export default function EditarRegistroPage({ params }: { params: Promise<{ id: s
         .from('registros')
         .update({
           data,
+          turno: turno || null,
           clima: clima || null,
           temperatura: temperatura ? parseInt(temperatura) : null,
           descricao: descricao || null,
+          servicos_executados: servicosExecutados || null,
         })
         .eq('id', registroId)
 
@@ -183,6 +189,17 @@ export default function EditarRegistroPage({ params }: { params: Promise<{ id: s
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Turno</label>
+            <div className="flex gap-2">
+              {['Manhã', 'Tarde', 'Integral'].map(t => (
+                <button key={t} type="button" onClick={() => setTurno(turno === t ? '' : t)}
+                  className={`flex-1 py-2 rounded-xl text-sm border transition ${turno === t ? 'bg-orange-500 text-white border-orange-500' : 'bg-white border-gray-200 text-gray-700 hover:border-orange-300'}`}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Clima</label>
             <div className="flex flex-wrap gap-2">
               {climaOptions.map(opt => (
@@ -219,6 +236,18 @@ export default function EditarRegistroPage({ params }: { params: Promise<{ id: s
           <textarea
             value={descricao}
             onChange={e => setDescricao(e.target.value)}
+            rows={4}
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+          />
+        </div>
+
+        {/* Serviços executados */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Serviços executados</label>
+          <textarea
+            value={servicosExecutados}
+            onChange={e => setServicosExecutados(e.target.value)}
+            placeholder={"Ex:\n- Concretagem da laje\n- Assentamento de alvenaria\n- Instalação elétrica"}
             rows={4}
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
           />
