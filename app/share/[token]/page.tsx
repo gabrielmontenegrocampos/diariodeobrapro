@@ -46,13 +46,25 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
           <div className="bg-white/20 p-2.5 rounded-2xl shrink-0">
             <HardHat size={24} />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-xs text-orange-100 font-medium tracking-wide">Diário de Obra</p>
             <h1 className="text-xl font-bold leading-tight truncate">{obra.nome}</h1>
             {enderecoObra && (
               <p className="text-xs text-orange-100 flex items-center gap-1 mt-0.5 truncate">
                 <MapPin size={11} className="shrink-0" /> {enderecoObra}
               </p>
+            )}
+            {obra.progresso_atual > 0 && (
+              <div className="mt-2.5">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-orange-100">Avanço físico</span>
+                  <span className="text-xs font-bold text-white">{obra.progresso_atual}%</span>
+                </div>
+                <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-white rounded-full transition-all duration-500"
+                    style={{ width: `${obra.progresso_atual}%` }} />
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -121,6 +133,36 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
           <span className="text-gray-300">·</span>
           <span>{registros?.length || 0} registro{registros?.length !== 1 ? 's' : ''}</span>
         </div>
+
+        {/* Card de avanço físico */}
+        {obra.progresso_atual > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Avanço físico da obra</p>
+                {obra.data_previsao_fim && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Previsão de conclusão: {format(parseISO(obra.data_previsao_fim), "dd/MM/yyyy")}
+                  </p>
+                )}
+              </div>
+              <span className="text-3xl font-bold" style={{
+                color: obra.progresso_atual < 30 ? '#ef4444' : obra.progresso_atual < 70 ? '#f97316' : '#22c55e'
+              }}>
+                {obra.progresso_atual}%
+              </span>
+            </div>
+            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-500" style={{
+                width: `${obra.progresso_atual}%`,
+                backgroundColor: obra.progresso_atual < 30 ? '#ef4444' : obra.progresso_atual < 70 ? '#f97316' : '#22c55e'
+              }} />
+            </div>
+            <div className="flex justify-between text-xs text-gray-300 mt-1">
+              <span>0%</span><span>50%</span><span>100%</span>
+            </div>
+          </div>
+        )}
 
         {/* Registros */}
         {(!registros || registros.length === 0) ? (
