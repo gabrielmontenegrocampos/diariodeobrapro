@@ -22,6 +22,21 @@ const ATIV_CFG: Record<AtivStatus, { label: string; cls: string }> = {
   concluida:    { label: 'Concluída ✓',   cls: 'bg-green-100 text-green-700' },
 }
 
+const DOC_TIPOS = [
+  { value: 'art',      label: 'ART / RRT',  icon: '📋' },
+  { value: 'seguro',   label: 'Seguro',      icon: '🛡️' },
+  { value: 'contrato', label: 'Contrato',    icon: '📝' },
+  { value: 'planta',   label: 'Planta',      icon: '📐' },
+  { value: 'outro',    label: 'Outro',       icon: '📄' },
+]
+function docIcon(tipo: string)  { return DOC_TIPOS.find(t => t.value === tipo)?.icon  || '📄' }
+function docLabel(tipo: string) { return DOC_TIPOS.find(t => t.value === tipo)?.label || 'Outro' }
+function fmtBytes(b: number) {
+  if (b < 1024)        return `${b} B`
+  if (b < 1024 * 1024) return `${Math.round(b / 1024)} KB`
+  return `${(b / (1024 * 1024)).toFixed(1)} MB`
+}
+
 export default async function SharePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
   const supabase = createServiceClient()
@@ -30,7 +45,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     .from('obras').select('*').eq('share_token', token).single()
   if (!obra) notFound()
 
-  const [{ data: registros }, { data: empresa }, { data: atividades }] = await Promise.all([
+  const [{ data: registros }, { data: empresa }, { data: atividades }, { data: documentos }] = await Promise.all([
     supabase.from('registros')
       .select('*, fotos(*), equipe_dia(*), ocorrencias(*)')
       .eq('obra_id', obra.id).order('data', { ascending: false }),
@@ -40,6 +55,10 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
       .eq('obra_id', obra.id)
       .order('ordem', { ascending: true })
       .order('created_at', { ascending: true }),
+    supabase.from('documentos_obra')
+      .select('id, tipo, arquivo_url, arquivo_nome, tamanho')
+      .eq('obra_id', obra.id)
+      .order('created_at', { ascending: false }),
   ])
 
   const enderecoObra = [obra.logradouro, obra.numero, obra.bairro, obra.cidade, obra.estado]
@@ -205,6 +224,38 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                   <span className={`shrink-0 text-xs px-2.5 py-1.5 rounded-xl font-semibold ${ATIV_CFG[a.status as AtivStatus].cls}`}>
                     {ATIV_CFG[a.status as AtivStatus].label}
                   </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Documentos (read-only) */}
+        {documentos && documentos.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-4 pt-4 pb-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                Documentos da Obra
+              </p>
+            </div>
+            <div className="border-t border-gray-50 divide-y divide-gray-50">
+              {(documentos as any[]).map((doc: any) => (
+                <div key={doc.id} className="flex items-center gap-3 px-4 py-3">
+                  <span className="text-xl shrink-0">{docIcon(doc.tipo)}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">{doc.arquivo_nome}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {docLabel(doc.tipo)}{doc.tamanho ? ` · ${fmtBytes(doc.tamanho)}` : ''}
+                    </p>
+                  </div>
+                  <a
+                    href={doc.arquivo_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 flex items-center gap-1.5 text-xs text-orange-500 font-semibold bg-orange-50 px-3 py-1.5 rounded-xl hover:bg-orange-100 transition"
+                  >
+                    ⬇ Baixar
+                  </a>
                 </div>
               ))}
             </div>

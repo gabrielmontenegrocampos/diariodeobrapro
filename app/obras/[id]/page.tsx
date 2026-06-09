@@ -10,6 +10,7 @@ import ShareButton from './ShareButton'
 import DeleteObraButton from './DeleteObraButton'
 import AppBar from '@/components/AppBar'
 import AtividadesSection from '@/components/AtividadesSection'
+import DocumentosSection from '@/components/DocumentosSection'
 
 const climaIcon: Record<string, string> = {
   sol: '☀️', nublado: '🌤️', chuva: '🌧️', tempestade: '⛈️', ventoso: '💨',
@@ -174,6 +175,11 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
         {/* Atividades da Obra */}
         <div className="mb-5">
           <AtividadesSection obraId={id} isOwner={isOwner} />
+        </div>
+
+        {/* Documentos */}
+        <div className="mb-5">
+          <DocumentosSection obraId={id} isOwner={isOwner} />
         </div>
 
         {/* Timeline de registros */}
