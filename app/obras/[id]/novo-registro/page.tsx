@@ -37,7 +37,6 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
   const [ocorrencias, setOcorrencias] = useState<OcorrenciaRow[]>([])
   const [turno, setTurno] = useState('')
   const [servicosExecutados, setServicosExecutados] = useState('')
-  const [progresso, setProgresso] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -100,17 +99,11 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
           descricao: descricao || null,
           turno: turno || null,
           servicos_executados: servicosExecutados || null,
-          progresso: progresso !== null ? progresso : null,
         })
         .select()
         .single()
 
       if (regError) throw new Error(regError.message)
-
-      // Atualiza progresso_atual da obra se informado
-      if (progresso !== null) {
-        await supabase.from('obras').update({ progresso_atual: progresso }).eq('id', obraId)
-      }
 
       for (const foto of fotos) {
         const ext = foto.file.name.split('.').pop()
@@ -241,40 +234,6 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
             rows={4}
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
           />
-        </div>
-
-        {/* Avanço físico */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-          <div className="flex items-center justify-between mb-3">
-            <label className="block text-sm font-medium text-gray-700">Avanço físico da obra</label>
-            <span className="text-xs text-gray-400">opcional</span>
-          </div>
-          {progresso === null ? (
-            <button type="button" onClick={() => setProgresso(50)}
-              className="w-full border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 hover:border-orange-300 hover:text-orange-500 transition">
-              + Informar % de avanço
-            </button>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold" style={{ color: progresso < 30 ? '#ef4444' : progresso < 70 ? '#f97316' : '#22c55e' }}>
-                  {progresso}%
-                </span>
-                <button type="button" onClick={() => setProgresso(null)}
-                  className="text-xs text-gray-400 hover:text-gray-600">remover</button>
-              </div>
-              <input
-                type="range" min={0} max={100} step={5}
-                value={progresso}
-                onChange={e => setProgresso(parseInt(e.target.value))}
-                className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                style={{ accentColor: progresso < 30 ? '#ef4444' : progresso < 70 ? '#f97316' : '#22c55e' }}
-              />
-              <div className="flex justify-between text-xs text-gray-400">
-                <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Fotos e Vídeos */}

@@ -90,23 +90,6 @@ export default async function RegistroPage({
           </div>
         )}
 
-        {registro.progresso !== null && registro.progresso !== undefined && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Avanço físico</h2>
-              <span className="text-lg font-bold" style={{ color: registro.progresso < 30 ? '#ef4444' : registro.progresso < 70 ? '#f97316' : '#22c55e' }}>
-                {registro.progresso}%
-              </span>
-            </div>
-            <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full rounded-full" style={{
-                width: `${registro.progresso}%`,
-                backgroundColor: registro.progresso < 30 ? '#ef4444' : registro.progresso < 70 ? '#f97316' : '#22c55e'
-              }} />
-            </div>
-          </div>
-        )}
-
         {registro.fotos?.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
