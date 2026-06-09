@@ -171,6 +171,23 @@ export default function ObrasPage() {
                         )}
                       </p>
                     )}
+
+                    {obra.progresso_atual > 0 && (
+                      <div className="mt-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-gray-400">Avanço</span>
+                          <span className="text-xs font-semibold" style={{ color: obra.progresso_atual < 30 ? '#ef4444' : obra.progresso_atual < 70 ? '#f97316' : '#22c55e' }}>
+                            {obra.progresso_atual}%
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{
+                            width: `${obra.progresso_atual}%`,
+                            backgroundColor: obra.progresso_atual < 30 ? '#ef4444' : obra.progresso_atual < 70 ? '#f97316' : '#22c55e'
+                          }} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

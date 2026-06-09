@@ -149,6 +149,27 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
             </div>
           )}
         </div>
+
+        {/* Barra de progresso */}
+        {obra.progresso_atual > 0 && (
+          <div className="px-4 pb-4">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-medium text-gray-500">Avanço físico</span>
+              <span className="text-xs font-bold" style={{ color: obra.progresso_atual < 30 ? '#ef4444' : obra.progresso_atual < 70 ? '#f97316' : '#22c55e' }}>
+                {obra.progresso_atual}%
+              </span>
+            </div>
+            <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${obra.progresso_atual}%`,
+                  backgroundColor: obra.progresso_atual < 30 ? '#ef4444' : obra.progresso_atual < 70 ? '#f97316' : '#22c55e'
+                }}
+              />
+            </div>
+          </div>
+        )}
         </div>
       </div>
 
