@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, UserPlus, Trash2, Clock, CheckCircle, Users, Copy, Check } from 'lucide-react'
+import { ArrowLeft, UserPlus, Trash2, CheckCircle, Users, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 import AppBar from '@/components/AppBar'
-import { LoadingOverlay } from '@/components/LoadingOverlay'
+import { LoadingOverlay, LoadingButton } from '@/components/LoadingOverlay'
 
 type Member = {
   id: string
@@ -20,23 +20,15 @@ export default function EquipePage() {
   const router = useRouter()
   const supabase = createClient()
   const [members, setMembers] = useState<Member[]>([])
+  const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
+  const [showSenha, setShowSenha] = useState(false)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [ownerId, setOwnerId] = useState('')
-  const [copied, setCopied] = useState(false)
-
-  const cadastroUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/login`
-    : 'https://diariodeobrapro.vercel.app/login'
-
-  function copyLink() {
-    navigator.clipboard.writeText(cadastroUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2500)
-  }
 
   useEffect(() => {
     async function load() {
@@ -59,43 +51,35 @@ export default function EquipePage() {
   }
 
   async function addMember() {
-    if (!email.trim() || !ownerId) return
+    if (!email.trim() || !senha.trim()) return
     setLoading(true)
     setError('')
     setSuccess('')
 
-    const emailClean = email.trim().toLowerCase()
-
-    // Não pode adicionar a si mesmo
     const { data: { session } } = await supabase.auth.getSession()
-    if (session?.user.email === emailClean) {
+    if (session?.user.email === email.trim().toLowerCase()) {
       setError('Não é possível adicionar seu próprio e-mail.')
       setLoading(false)
       return
     }
 
-    const { error: insertError } = await supabase
-      .from('team_members')
-      .insert({ owner_id: ownerId, member_email: emailClean })
+    const res = await fetch('/api/criar-membro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), password: senha.trim(), nome: nome.trim() }),
+    })
 
-    if (insertError) {
-      if (insertError.code === '23505') {
-        setError('Este e-mail já foi convidado.')
-      } else {
-        setError('Erro ao adicionar membro.')
-      }
+    const json = await res.json()
+    if (!res.ok) {
+      setError(json.error || 'Erro ao criar membro.')
       setLoading(false)
       return
     }
 
-    // Tenta ativar imediatamente se o usuário já tem conta
-    await supabase.rpc('activate_pending_invite', {
-      p_owner_id: ownerId,
-      p_email: emailClean,
-    })
-
+    setNome('')
     setEmail('')
-    setSuccess(`Membro adicionado! Copie o link acima e envie para ${emailClean} se cadastrar.`)
+    setSenha('')
+    setSuccess('Membro criado com sucesso! Já pode fazer login no app.')
     await loadMembers(ownerId)
     setLoading(false)
   }
@@ -120,49 +104,69 @@ export default function EquipePage() {
         </div>
 
         {/* Info */}
-        <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 mb-5 space-y-3">
+        <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 mb-5">
           <p className="text-sm text-orange-800 leading-relaxed">
-            Adicione o e-mail do membro abaixo, depois envie o link de cadastro para ele entrar no app.
+            Crie a conta do membro diretamente aqui. Depois é só passar o e-mail e senha para ele fazer login.
             Membros podem criar registros mas não podem editar ou excluir obras.
           </p>
-          <button
-            onClick={copyLink}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-orange-200 bg-white text-sm font-medium text-orange-600 hover:bg-orange-100 transition"
-          >
-            {copied ? <Check size={15} className="text-green-500" /> : <Copy size={15} />}
-            {copied ? 'Link copiado!' : 'Copiar link de cadastro'}
-          </button>
-          {copied && (
-            <p className="text-xs text-orange-700 text-center">
-              Envie pelo WhatsApp ou e-mail para o membro se cadastrar
-            </p>
-          )}
         </div>
 
-        {/* Adicionar membro */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-5">
-          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-            <UserPlus size={16} className="text-orange-500" /> Convidar membro
-          </label>
-          <div className="flex gap-2">
+        {/* Criar membro */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-5 space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <UserPlus size={16} className="text-orange-500" />
+            <span className="text-sm font-semibold text-gray-700">Criar novo membro</span>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Nome (opcional)</label>
+            <input
+              type="text"
+              value={nome}
+              onChange={e => setNome(e.target.value)}
+              placeholder="Ex: João Silva"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">E-mail *</label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addMember()}
               placeholder="email@exemplo.com"
-              className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
             />
-            <button
-              onClick={addMember}
-              disabled={loading || !email.trim()}
-              className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-semibold transition disabled:opacity-60"
-            >
-              {loading ? '...' : 'Convidar'}
-            </button>
           </div>
-          {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
-          {success && <p className="text-green-600 text-xs mt-2">{success}</p>}
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Senha *</label>
+            <div className="relative">
+              <input
+                type={showSenha ? 'text' : 'password'}
+                value={senha}
+                onChange={e => setSenha(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 pr-10"
+              />
+              <button type="button" onClick={() => setShowSenha(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                {showSenha ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          {error && <p className="text-red-500 text-xs">{error}</p>}
+          {success && <p className="text-green-600 text-xs font-medium">{success}</p>}
+
+          <button
+            onClick={addMember}
+            disabled={loading || !email.trim() || !senha.trim()}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-60"
+          >
+            {loading ? <LoadingButton message="Criando conta..." /> : 'Criar membro'}
+          </button>
         </div>
 
         {/* Lista de membros */}
@@ -182,17 +186,12 @@ export default function EquipePage() {
             <div className="divide-y divide-gray-50">
               {members.map(m => (
                 <div key={m.id} className="flex items-center gap-3 px-4 py-3.5">
-                  <div className={`p-2 rounded-xl ${m.status === 'active' ? 'bg-green-50' : 'bg-yellow-50'}`}>
-                    {m.status === 'active'
-                      ? <CheckCircle size={16} className="text-green-500" />
-                      : <Clock size={16} className="text-yellow-500" />
-                    }
+                  <div className="p-2 rounded-xl bg-green-50">
+                    <CheckCircle size={16} className="text-green-500" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-800 truncate">{m.member_email}</p>
-                    <p className={`text-xs ${m.status === 'active' ? 'text-green-600' : 'text-yellow-600'}`}>
-                      {m.status === 'active' ? 'Ativo' : 'Aguardando cadastro'}
-                    </p>
+                    <p className="text-xs text-green-600">Ativo</p>
                   </div>
                   <button
                     onClick={() => removeMember(m.id)}
