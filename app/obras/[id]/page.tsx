@@ -174,9 +174,9 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
           <p className="text-sm mt-1">Adicione o primeiro registro do dia</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-6 pb-8">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '32px' }}>
           {registros.map((reg: RegistroCompleto & { fotos: { id: string; url: string }[]; equipe_dia: { id: string }[]; ocorrencias: { id: string }[] }) => (
-            <Link key={reg.id} href={`/obras/${id}/registros/${reg.id}`} className="block">
+            <Link key={reg.id} href={`/obras/${id}/registros/${reg.id}`} style={{ display: 'block' }}>
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99] transition-all duration-150">
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-bold text-gray-900 text-sm capitalize">
