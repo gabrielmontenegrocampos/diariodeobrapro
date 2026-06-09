@@ -53,7 +53,7 @@ export default async function RegistroPage({
           </h1>
           <div className="flex items-center gap-2 flex-wrap mt-0.5">
             {registro.turno && (
-              <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
+              <span className="text-xs bg-[#dbeafe] text-[#1e3a5f] px-2 py-0.5 rounded-full font-medium">
                 {registro.turno}
               </span>
             )}
@@ -67,7 +67,7 @@ export default async function RegistroPage({
         </div>
         <div className="flex gap-2">
           <Link href={`/obras/${obraId}/registros/${registroId}/editar`}>
-            <button className="p-2 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-orange-500 hover:border-orange-300 transition">
+            <button className="p-2 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-[#1e3a5f] hover:border-[#93b8e0] transition">
               <Pencil size={16} />
             </button>
           </Link>

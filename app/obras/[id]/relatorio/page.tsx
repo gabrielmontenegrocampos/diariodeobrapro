@@ -46,7 +46,7 @@ export default function RelatorioPage() {
       const { default: autoTable } = await import('jspdf-autotable')
 
       const doc = new jsPDF()
-      const orange: [number, number, number] = [249, 115, 22]
+      const orange: [number, number, number] = [30, 58, 95]
       const dark: [number, number, number] = [30, 30, 30]
       const gray: [number, number, number] = [120, 120, 120]
       let y = 14
@@ -170,7 +170,7 @@ export default function RelatorioPage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 flex flex-col items-center text-center">
         {status === 'gerando' && (
           <>
-            <Loader2 size={40} className="text-orange-400 animate-spin mb-4" />
+            <Loader2 size={40} className="text-[#2a5298] animate-spin mb-4" />
             <p className="font-semibold text-gray-800">Gerando relatório...</p>
             {nomeObra && <p className="text-sm text-gray-400 mt-1">{nomeObra}</p>}
             <p className="text-xs text-gray-400 mt-3">O download iniciará automaticamente</p>
@@ -182,7 +182,7 @@ export default function RelatorioPage() {
             <p className="font-semibold text-gray-800">PDF baixado!</p>
             {nomeObra && <p className="text-sm text-gray-400 mt-1">{nomeObra}</p>}
             <Link href={`/obras/${obraId}`} className="mt-5">
-              <button onClick={gerarPDF} className="text-sm text-orange-500 hover:underline">
+              <button onClick={gerarPDF} className="text-sm text-[#1e3a5f] hover:underline">
                 Baixar novamente
               </button>
             </Link>
@@ -192,7 +192,7 @@ export default function RelatorioPage() {
           <>
             <AlertCircle size={44} className="text-red-400 mb-4" />
             <p className="font-semibold text-gray-800">Erro ao gerar o PDF</p>
-            <button onClick={gerarPDF} className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-xl text-sm hover:bg-orange-600">
+            <button onClick={gerarPDF} className="mt-4 px-4 py-2 bg-[#1e3a5f] text-white rounded-xl text-sm hover:bg-[#152e48]">
               Tentar novamente
             </button>
           </>

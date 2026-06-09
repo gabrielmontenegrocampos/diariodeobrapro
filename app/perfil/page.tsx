@@ -37,7 +37,7 @@ export default function PerfilPage() {
   const [confirmarSenha, setConfirmarSenha] = useState('')
   const [showSenhas, setShowSenhas] = useState(false)
 
-  const inputCls = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+  const inputCls = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2a5298]"
   const labelCls = "block text-xs font-medium text-gray-500 mb-1"
 
   useEffect(() => {
@@ -182,7 +182,7 @@ export default function PerfilPage() {
               </div>
               <div>
                 <button type="button" onClick={() => fotoRef.current?.click()}
-                  className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-orange-300 hover:text-orange-500 transition flex items-center gap-2">
+                  className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-[#93b8e0] hover:text-[#1e3a5f] transition flex items-center gap-2">
                   <Camera size={14} />
                   {fotoExibida ? 'Trocar foto' : 'Adicionar foto'}
                 </button>
@@ -225,7 +225,7 @@ export default function PerfilPage() {
           {success && <p className="text-green-600 text-sm px-1 font-medium">✓ {success}</p>}
 
           <button type="submit" disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl py-3.5 transition disabled:opacity-60">
+            className="w-full bg-[#1e3a5f] hover:bg-[#152e48] text-white font-semibold rounded-xl py-3.5 transition disabled:opacity-60">
             {loading ? <LoadingButton message="Salvando..." /> : 'Salvar Dados'}
           </button>
         </form>
@@ -235,7 +235,7 @@ export default function PerfilPage() {
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Alterar senha</p>
             <button type="button" onClick={() => setShowSenhas(v => !v)}
-              className="text-xs text-orange-500 hover:text-orange-600">
+              className="text-xs text-[#1e3a5f] hover:text-[#152e48]">
               {showSenhas ? 'Fechar' : 'Alterar'}
             </button>
           </div>

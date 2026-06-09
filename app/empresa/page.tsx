@@ -154,7 +154,7 @@ export default function EmpresaPage() {
 
   if (fetching) return <LoadingOverlay message="Carregando dados da empresa..." />
 
-  const inputCls = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+  const inputCls = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2a5298]"
   const labelCls = "block text-xs font-medium text-gray-500 mb-1"
 
   return (
@@ -193,7 +193,7 @@ export default function EmpresaPage() {
             </div>
             <div>
               <button type="button" onClick={() => logoRef.current?.click()}
-                className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-orange-300 hover:text-orange-500 transition">
+                className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-[#93b8e0] hover:text-[#1e3a5f] transition">
                 {logoUrl || logoPreview ? 'Trocar imagem' : 'Adicionar logo'}
               </button>
               <p className="text-xs text-gray-400 mt-1">PNG, JPG ou SVG · aparece no relatório PDF</p>
@@ -207,7 +207,7 @@ export default function EmpresaPage() {
           <div className="flex gap-2">
             {[{ v: 'juridica', l: 'Pessoa Jurídica (CNPJ)' }, { v: 'fisica', l: 'Pessoa Física (CPF)' }].map(opt => (
               <button key={opt.v} type="button" onClick={() => { setTipo(opt.v as any); setCpfCnpj('') }}
-                className={`flex-1 py-2 rounded-xl text-sm border transition ${tipo === opt.v ? 'bg-orange-500 text-white border-orange-500' : 'bg-white border-gray-200 text-gray-700'}`}>
+                className={`flex-1 py-2 rounded-xl text-sm border transition ${tipo === opt.v ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]' : 'bg-white border-gray-200 text-gray-700'}`}>
                 {opt.l}
               </button>
             ))}
@@ -229,7 +229,7 @@ export default function EmpresaPage() {
               />
               {tipo === 'juridica' && (
                 <button type="button" onClick={handleBuscarCNPJ} disabled={buscandoCNPJ}
-                  className="px-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl flex items-center gap-1 text-sm disabled:opacity-60 shrink-0">
+                  className="px-3 bg-[#1e3a5f] hover:bg-[#152e48] text-white rounded-xl flex items-center gap-1 text-sm disabled:opacity-60 shrink-0">
                   {buscandoCNPJ ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
                 </button>
               )}
@@ -277,7 +277,7 @@ export default function EmpresaPage() {
             <div className="flex gap-2">
               <input type="text" value={cep} onChange={e => setCep(maskCEP(e.target.value))} placeholder="00000-000" className={inputCls} />
               <button type="button" onClick={handleBuscarCEP} disabled={buscandoCEP}
-                className="px-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl flex items-center gap-1 text-sm disabled:opacity-60 shrink-0">
+                className="px-3 bg-[#1e3a5f] hover:bg-[#152e48] text-white rounded-xl flex items-center gap-1 text-sm disabled:opacity-60 shrink-0">
                 {buscandoCEP ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
               </button>
             </div>
@@ -319,7 +319,7 @@ export default function EmpresaPage() {
         {success && <p className="text-green-600 text-sm px-1 font-medium">✓ Dados salvos com sucesso!</p>}
 
         <button type="submit" disabled={loading}
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl py-3.5 transition disabled:opacity-60">
+          className="w-full bg-[#1e3a5f] hover:bg-[#152e48] text-white font-semibold rounded-xl py-3.5 transition disabled:opacity-60">
           {loading ? <LoadingButton message="Salvando..." /> : 'Salvar Dados'}
         </button>
       </form>

@@ -45,7 +45,7 @@ export default function EditarObraPage({ params }: { params: Promise<{ id: strin
   const [cidade, setCidade] = useState('')
   const [estado, setEstado] = useState('')
 
-  const inputCls = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+  const inputCls = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2a5298]"
   const labelCls = "block text-xs font-medium text-gray-500 mb-1"
 
   useEffect(() => {
@@ -146,7 +146,7 @@ export default function EditarObraPage({ params }: { params: Promise<{ id: strin
           </div>
         ) : (
           <button type="button" onClick={() => fileRef.current?.click()}
-            className="w-full h-32 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-orange-300 hover:text-orange-400 transition">
+            className="w-full h-32 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[#93b8e0] hover:text-[#2a5298] transition">
             <Camera size={24} /><span className="text-sm">Adicionar foto de capa</span>
           </button>
         )}
@@ -170,7 +170,7 @@ export default function EditarObraPage({ params }: { params: Promise<{ id: strin
             <div className="flex gap-2">
               {STATUS_OPTS.map(opt => (
                 <button key={opt.v} type="button" onClick={() => setStatus(opt.v)}
-                  className={`flex-1 py-2 rounded-xl text-sm border transition ${status === opt.v ? 'bg-orange-500 text-white border-orange-500' : 'bg-white border-gray-200 text-gray-700'}`}>
+                  className={`flex-1 py-2 rounded-xl text-sm border transition ${status === opt.v ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]' : 'bg-white border-gray-200 text-gray-700'}`}>
                   {opt.l}
                 </button>
               ))}
@@ -185,7 +185,7 @@ export default function EditarObraPage({ params }: { params: Promise<{ id: strin
             <label className={labelCls}>CEP</label>
             <div className="flex gap-2">
               <input type="text" value={cep} onChange={e => setCep(maskCEP(e.target.value))} placeholder="00000-000" className={inputCls} />
-              <button type="button" onClick={handleBuscarCEP} disabled={buscandoCEP} className="px-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl disabled:opacity-60 shrink-0">
+              <button type="button" onClick={handleBuscarCEP} disabled={buscandoCEP} className="px-3 bg-[#1e3a5f] hover:bg-[#152e48] text-white rounded-xl disabled:opacity-60 shrink-0">
                 {buscandoCEP ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
               </button>
             </div>
@@ -231,7 +231,7 @@ export default function EditarObraPage({ params }: { params: Promise<{ id: strin
         </div>
 
         {error && <p className="text-red-500 text-sm px-1">{error}</p>}
-        <button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl py-3.5 transition disabled:opacity-60">
+        <button type="submit" disabled={loading} className="w-full bg-[#1e3a5f] hover:bg-[#152e48] text-white font-semibold rounded-xl py-3.5 transition disabled:opacity-60">
           {loading ? <LoadingButton message="Salvando alterações..." /> : 'Salvar Alterações'}
         </button>
       </form>

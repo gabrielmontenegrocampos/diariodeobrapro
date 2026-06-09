@@ -113,8 +113,8 @@ export default function DocumentosSection({ obraId, isOwner }: { obraId: string;
                   <button key={t.value} onClick={() => setTipo(t.value)}
                     className={`text-xs px-2.5 py-1.5 rounded-xl border font-medium transition ${
                       tipo === t.value
-                        ? 'bg-orange-500 text-white border-orange-500'
-                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-orange-300'
+                        ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
+                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-[#93b8e0]'
                     }`}>
                     {t.icon} {t.label}
                   </button>
@@ -122,15 +122,15 @@ export default function DocumentosSection({ obraId, isOwner }: { obraId: string;
               </div>
               <div onClick={() => fileRef.current?.click()}
                 className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition ${
-                  file ? 'border-orange-400 bg-orange-50' : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50/30'
+                  file ? 'border-[#2a5298] bg-[#eef4fc]' : 'border-gray-200 hover:border-[#93b8e0] hover:bg-[#eef4fc]/30'
                 }`}>
                 <input ref={fileRef} type="file"
                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.dwg"
                   className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
                 {file ? (
                   <>
-                    <p className="text-sm font-semibold text-orange-700 truncate">{file.name}</p>
-                    <p className="text-xs text-orange-400 mt-0.5">{fmtBytes(file.size)}</p>
+                    <p className="text-sm font-semibold text-[#1e3a5f] truncate">{file.name}</p>
+                    <p className="text-xs text-[#2a5298] mt-0.5">{fmtBytes(file.size)}</p>
                   </>
                 ) : (
                   <>
@@ -146,7 +146,7 @@ export default function DocumentosSection({ obraId, isOwner }: { obraId: string;
                   Cancelar
                 </button>
                 <button onClick={handleUpload} disabled={uploading || !file}
-                  className="flex-1 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-bold disabled:opacity-50">
+                  className="flex-1 py-2.5 bg-[#1e3a5f] text-white rounded-xl text-sm font-bold disabled:opacity-50">
                   {uploading ? 'Enviando...' : 'Enviar arquivo'}
                 </button>
               </div>
@@ -166,7 +166,7 @@ export default function DocumentosSection({ obraId, isOwner }: { obraId: string;
                     </p>
                   </div>
                   <a href={doc.arquivo_url} target="_blank" rel="noopener noreferrer"
-                    className="shrink-0 p-2 text-orange-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition"
+                    className="shrink-0 p-2 text-[#2a5298] hover:text-[#152e48] hover:bg-[#eef4fc] rounded-xl transition"
                     title="Abrir / baixar">
                     <Download size={16} />
                   </a>
@@ -186,7 +186,7 @@ export default function DocumentosSection({ obraId, isOwner }: { obraId: string;
             <div className="px-4 py-3 border-t border-gray-50">
               {!showForm && (
                 <button onClick={() => setShowForm(true)}
-                  className="w-full py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 font-medium hover:border-orange-300 hover:text-orange-500 transition flex items-center justify-center gap-1.5">
+                  className="w-full py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 font-medium hover:border-[#93b8e0] hover:text-[#1e3a5f] transition flex items-center justify-center gap-1.5">
                   <Plus size={15} /> Adicionar documento
                 </button>
               )}

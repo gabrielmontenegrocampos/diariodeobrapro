@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, MapPin, Calendar, LogOut, HardHat, Settings, Navigation, Users } from 'lucide-react'
+import { Plus, MapPin, Calendar, HardHat, Navigation, Users } from 'lucide-react'
 import AppBar from '@/components/AppBar'
 import { LoadingOverlay } from '@/components/LoadingOverlay'
 import { format, parseISO } from 'date-fns'
@@ -56,11 +56,6 @@ export default function ObrasPage() {
     load()
   }, [])
 
-  async function signOut() {
-    await supabase.auth.signOut()
-    router.replace('/login')
-  }
-
   if (loading) return <LoadingOverlay message="Carregando obras..." />
 
   return (
@@ -71,25 +66,6 @@ export default function ObrasPage() {
         <div>
           <h1 className="text-xl font-bold text-gray-900">{isMember ? 'Obras' : 'Minhas Obras'}</h1>
           <p className="text-xs text-gray-400 mt-0.5">Olá, <span className="font-medium text-gray-600">{userName}</span></p>
-        </div>
-        <div className="flex items-center gap-1">
-          {!isMember && (
-            <>
-              <Link href="/equipe">
-                <button className="p-2 text-gray-400 hover:text-orange-500 transition" title="Equipe">
-                  <Users size={20} />
-                </button>
-              </Link>
-              <Link href="/empresa">
-                <button className="p-2 text-gray-400 hover:text-orange-500 transition" title="Empresa">
-                  <Settings size={20} />
-                </button>
-              </Link>
-            </>
-          )}
-          <button onClick={signOut} className="p-2 text-gray-400 hover:text-gray-600" title="Sair">
-            <LogOut size={20} />
-          </button>
         </div>
       </div>
 
@@ -120,8 +96,8 @@ export default function ObrasPage() {
                     {obra.foto_capa ? (
                       <Image src={obra.foto_capa} alt={obra.nome} fill className="object-cover" unoptimized />
                     ) : (
-                      <div className="w-full h-full bg-orange-50 flex items-center justify-center">
-                        <HardHat size={28} className="text-orange-300" />
+                      <div className="w-full h-full bg-[#eef4fc] flex items-center justify-center">
+                        <HardHat size={28} className="text-[#93b8e0]" />
                       </div>
                     )}
                   </div>
@@ -153,7 +129,7 @@ export default function ObrasPage() {
                         {mapsUrl && (
                           <button
                             onClick={e => { e.stopPropagation(); window.open(mapsUrl, '_blank') }}
-                            className="shrink-0 p-1 text-orange-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition"
+                            className="shrink-0 p-1 text-[#2a5298] hover:text-[#152e48] hover:bg-[#eef4fc] rounded-lg transition"
                             title="Abrir no Google Maps"
                           >
                             <Navigation size={13} />
@@ -198,7 +174,7 @@ export default function ObrasPage() {
 
       {!isMember && (
         <Link href="/obras/nova">
-          <button className="fixed bottom-6 right-6 bg-orange-500 hover:bg-orange-600 text-white rounded-full p-4 shadow-lg flex items-center gap-2 transition">
+          <button className="fixed bottom-6 right-6 bg-[#1e3a5f] hover:bg-[#152e48] text-white rounded-full p-4 shadow-lg flex items-center gap-2 transition">
             <Plus size={22} />
             <span className="font-semibold pr-1">Nova Obra</span>
           </button>

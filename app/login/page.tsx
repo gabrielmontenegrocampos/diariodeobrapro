@@ -40,7 +40,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="bg-orange-500 text-white p-3 rounded-2xl mb-3">
+          <div className="bg-[#1e3a5f] text-white p-3 rounded-2xl mb-3">
             <HardHat size={32} />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Diário de Obra</h1>
@@ -57,7 +57,7 @@ export default function LoginPage() {
                 onChange={e => setName(e.target.value)}
                 placeholder="Seu nome"
                 required
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2a5298]"
               />
             </div>
           )}
@@ -69,7 +69,7 @@ export default function LoginPage() {
               onChange={e => setEmail(e.target.value)}
               placeholder="seu@email.com"
               required
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2a5298]"
             />
           </div>
           <div>
@@ -81,7 +81,7 @@ export default function LoginPage() {
               placeholder="••••••••"
               required
               minLength={6}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2a5298]"
             />
           </div>
 
@@ -90,7 +90,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl py-3 transition disabled:opacity-60"
+            className="w-full bg-[#1e3a5f] hover:bg-[#152e48] text-white font-semibold rounded-xl py-3 transition disabled:opacity-60"
           >
             {loading ? 'Aguarde...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
           </button>
@@ -100,7 +100,7 @@ export default function LoginPage() {
           {mode === 'login' ? 'Não tem conta?' : 'Já tem conta?'}{' '}
           <button
             onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }}
-            className="text-orange-500 font-medium hover:underline"
+            className="text-[#1e3a5f] font-medium hover:underline"
           >
             {mode === 'login' ? 'Criar conta' : 'Entrar'}
           </button>

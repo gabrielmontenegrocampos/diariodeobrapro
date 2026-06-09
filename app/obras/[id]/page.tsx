@@ -71,7 +71,7 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
           {isOwner && (
             <>
               <Link href={`/obras/${id}/editar`}>
-                <button className="p-2 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-orange-500 hover:border-orange-300 transition">
+                <button className="p-2 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-[#1e3a5f] hover:border-[#93b8e0] transition">
                   <Pencil size={16} />
                 </button>
               </Link>
@@ -92,14 +92,14 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
           <div className="p-4 space-y-2.5">
             {enderecoCompleto && (
               <div className="flex items-start gap-2">
-                <MapPin size={14} className="text-orange-400 shrink-0 mt-0.5" />
+                <MapPin size={14} className="text-[#2a5298] shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-700 leading-snug">{enderecoCompleto}</p>
                   {obra.cep && <p className="text-xs text-gray-400">CEP {obra.cep}</p>}
                 </div>
                 {mapsUrl && (
                   <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-                    className="shrink-0 flex items-center gap-1 text-xs text-orange-500 hover:text-orange-600 bg-orange-50 px-2 py-1 rounded-lg">
+                    className="shrink-0 flex items-center gap-1 text-xs text-[#1e3a5f] hover:text-[#152e48] bg-[#eef4fc] px-2 py-1 rounded-lg">
                     <Navigation size={12} /> Rota
                   </a>
                 )}
@@ -158,7 +158,7 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
         {/* Ações */}
         <div className="flex gap-2 mb-5">
           <Link href={`/obras/${id}/novo-registro`} className="flex-1">
-            <button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl py-2.5 flex items-center justify-center gap-2 transition text-sm">
+            <button className="w-full bg-[#1e3a5f] hover:bg-[#152e48] text-white font-semibold rounded-xl py-2.5 flex items-center justify-center gap-2 transition text-sm">
               <Plus size={18} /> Novo Registro
             </button>
           </Link>

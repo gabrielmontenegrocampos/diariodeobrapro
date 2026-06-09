@@ -19,7 +19,7 @@ const severidadeColor: Record<string, string> = {
 type AtivStatus = 'pendente' | 'em_andamento' | 'concluida'
 const ATIV_CFG: Record<AtivStatus, { label: string; cls: string }> = {
   pendente:     { label: 'Pendente',     cls: 'bg-gray-100 text-gray-500' },
-  em_andamento: { label: 'Em andamento', cls: 'bg-orange-100 text-orange-700' },
+  em_andamento: { label: 'Em andamento', cls: 'bg-[#dbeafe] text-[#1e3a5f]' },
   concluida:    { label: 'Concluída ✓',  cls: 'bg-green-100 text-green-700' },
 }
 
@@ -90,21 +90,21 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     <div className="min-h-screen bg-gray-50">
 
       {/* Orange header */}
-      <div className="bg-orange-500 text-white px-4 py-5">
+      <div className="bg-[#1e3a5f] text-white px-4 py-5">
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <div className="bg-white/20 p-2.5 rounded-2xl shrink-0"><HardHat size={24} /></div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-orange-100 font-medium tracking-wide">Diário de Obra</p>
+            <p className="text-xs text-blue-200 font-medium tracking-wide">Diário de Obra</p>
             <h1 className="text-xl font-bold leading-tight truncate">{obra.nome}</h1>
             {enderecoObra && (
-              <p className="text-xs text-orange-100 flex items-center gap-1 mt-0.5 truncate">
+              <p className="text-xs text-blue-200 flex items-center gap-1 mt-0.5 truncate">
                 <MapPin size={11} className="shrink-0" /> {enderecoObra}
               </p>
             )}
             {progresso > 0 && (
               <div className="mt-2.5">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-orange-100">Avanço físico</span>
+                  <span className="text-xs text-blue-200">Avanço físico</span>
                   <span className="text-xs font-bold text-white">{progresso}%</span>
                 </div>
                 <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
@@ -127,8 +127,8 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                   <Image src={empresa.logo_url} alt="Logo" fill className="object-contain p-1" unoptimized />
                 </div>
               ) : (
-                <div className="w-14 h-14 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
-                  <HardHat size={22} className="text-orange-400" />
+                <div className="w-14 h-14 rounded-xl bg-[#eef4fc] flex items-center justify-center shrink-0">
+                  <HardHat size={22} className="text-[#2a5298]" />
                 </div>
               )}
               <div className="min-w-0 flex-1">
@@ -168,7 +168,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
         <div className="flex items-center gap-3 text-sm text-gray-500">
           {obra.data_inicio && (
             <span className="flex items-center gap-1.5">
-              <Calendar size={14} className="text-orange-400" />
+              <Calendar size={14} className="text-[#2a5298]" />
               Início: {format(parseISO(obra.data_inicio), "dd/MM/yyyy")}
             </span>
           )}
@@ -294,7 +294,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                     </p>
                   </div>
                   <a href={doc.arquivo_url} target="_blank" rel="noopener noreferrer"
-                    className="shrink-0 flex items-center gap-1.5 text-xs text-orange-500 font-semibold bg-orange-50 px-3 py-1.5 rounded-xl hover:bg-orange-100 transition">
+                    className="shrink-0 flex items-center gap-1.5 text-xs text-[#1e3a5f] font-semibold bg-[#eef4fc] px-3 py-1.5 rounded-xl hover:bg-[#dbeafe] transition">
                     ⬇ Baixar
                   </a>
                 </div>

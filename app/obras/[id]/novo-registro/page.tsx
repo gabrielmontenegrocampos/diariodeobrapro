@@ -167,7 +167,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
               value={data}
               onChange={e => setData(e.target.value)}
               required
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2a5298]"
             />
           </div>
           <div>
@@ -175,7 +175,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
             <div className="flex gap-2">
               {['Manhã', 'Tarde', 'Integral'].map(t => (
                 <button key={t} type="button" onClick={() => setTurno(turno === t ? '' : t)}
-                  className={`flex-1 py-2 rounded-xl text-sm border transition ${turno === t ? 'bg-orange-500 text-white border-orange-500' : 'bg-white border-gray-200 text-gray-700 hover:border-orange-300'}`}>
+                  className={`flex-1 py-2 rounded-xl text-sm border transition ${turno === t ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]' : 'bg-white border-gray-200 text-gray-700 hover:border-[#93b8e0]'}`}>
                   {t}
                 </button>
               ))}
@@ -191,8 +191,8 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
                   onClick={() => setClima(clima === opt.value ? '' : opt.value)}
                   className={`px-3 py-1.5 rounded-xl text-sm border transition ${
                     clima === opt.value
-                      ? 'bg-orange-500 text-white border-orange-500'
-                      : 'bg-white border-gray-200 text-gray-700 hover:border-orange-300'
+                      ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
+                      : 'bg-white border-gray-200 text-gray-700 hover:border-[#93b8e0]'
                   }`}
                 >
                   {opt.label}
@@ -207,7 +207,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
               value={temperatura}
               onChange={e => setTemperatura(e.target.value)}
               placeholder="Ex: 28"
-              className="w-32 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="w-32 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2a5298]"
             />
           </div>
         </div>
@@ -220,7 +220,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
             onChange={e => setDescricao(e.target.value)}
             placeholder="Descreva as atividades realizadas no dia..."
             rows={4}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2a5298] resize-none"
           />
         </div>
 
@@ -232,7 +232,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
             onChange={e => setServicosExecutados(e.target.value)}
             placeholder={"Ex:\n- Concretagem da laje do 2º pavimento\n- Assentamento de alvenaria bloco A\n- Instalação elétrica sala 03"}
             rows={4}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2a5298] resize-none"
           />
         </div>
 
@@ -264,7 +264,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="w-full border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-500 hover:border-orange-300 hover:text-orange-500 transition flex items-center justify-center gap-2"
+            className="w-full border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-500 hover:border-[#93b8e0] hover:text-[#1e3a5f] transition flex items-center justify-center gap-2"
           >
             <Camera size={18} /> Adicionar fotos e vídeos
           </button>
@@ -282,14 +282,14 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
                     value={w.nome}
                     onChange={e => updateWorker(i, 'nome', e.target.value)}
                     placeholder="Nome"
-                    className="col-span-1 border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-400"
+                    className="col-span-1 border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#2a5298]"
                   />
                   <input
                     type="text"
                     value={w.funcao}
                     onChange={e => updateWorker(i, 'funcao', e.target.value)}
                     placeholder="Função"
-                    className="col-span-1 border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-400"
+                    className="col-span-1 border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#2a5298]"
                   />
                   <input
                     type="number"
@@ -298,7 +298,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
                     placeholder="Horas"
                     min="0"
                     step="0.5"
-                    className="col-span-1 border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-400"
+                    className="col-span-1 border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#2a5298]"
                   />
                 </div>
                 <button type="button" onClick={() => removeWorker(i)} className="text-gray-300 hover:text-red-400 mt-2">
@@ -310,7 +310,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
           <button
             type="button"
             onClick={addWorker}
-            className="mt-2 text-sm text-orange-500 hover:text-orange-600 flex items-center gap-1"
+            className="mt-2 text-sm text-[#1e3a5f] hover:text-[#152e48] flex items-center gap-1"
           >
             <Plus size={14} /> Adicionar trabalhador
           </button>
@@ -328,7 +328,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
                     value={o.descricao}
                     onChange={e => updateOcorrencia(i, 'descricao', e.target.value)}
                     placeholder="Descrição da ocorrência"
-                    className="flex-1 border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-orange-400"
+                    className="flex-1 border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#2a5298]"
                   />
                   <button type="button" onClick={() => removeOcorrencia(i)} className="text-gray-300 hover:text-red-400">
                     <Trash2 size={14} />
@@ -360,7 +360,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
           <button
             type="button"
             onClick={addOcorrencia}
-            className="mt-2 text-sm text-orange-500 hover:text-orange-600 flex items-center gap-1"
+            className="mt-2 text-sm text-[#1e3a5f] hover:text-[#152e48] flex items-center gap-1"
           >
             <Plus size={14} /> Adicionar ocorrência
           </button>
@@ -371,7 +371,7 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl py-3.5 transition disabled:opacity-60 text-base"
+          className="w-full bg-[#1e3a5f] hover:bg-[#152e48] text-white font-semibold rounded-xl py-3.5 transition disabled:opacity-60 text-base"
         >
           {loading ? <LoadingButton message="Salvando..." /> : 'Salvar Registro'}
         </button>

@@ -16,7 +16,7 @@ type Group = { parent: Atividade; children: Atividade[] }
 
 const S = {
   pendente:     { label: 'Pendente',     cls: 'bg-gray-100 text-gray-500',     next: 'em_andamento' as const },
-  em_andamento: { label: 'Em andamento', cls: 'bg-orange-100 text-orange-700',  next: 'concluida'    as const },
+  em_andamento: { label: 'Em andamento', cls: 'bg-[#dbeafe] text-[#1e3a5f]',  next: 'concluida'    as const },
   concluida:    { label: 'Concluída ✓',  cls: 'bg-green-100 text-green-700',    next: 'pendente'     as const },
 }
 
@@ -129,18 +129,18 @@ export default function AtividadesSection({ obraId, isOwner }: { obraId: string;
       <div className="space-y-2 pt-2 pb-1">
         <input type="text" value={newEtapa} onChange={e => setNewEtapa(e.target.value)}
           placeholder={parentId ? 'Nome da sub-atividade *' : 'Nome da atividade *'}
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2a5298]"
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && addActivity(parentId)} autoFocus />
         <input type="text" value={newDesc} onChange={e => setNewDesc(e.target.value)}
           placeholder="Descrição (opcional)"
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2a5298]" />
         <div className="flex gap-2">
           <button onClick={cancelForm}
             className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-500 font-medium">
             Cancelar
           </button>
           <button onClick={() => addActivity(parentId)} disabled={saving || !newEtapa.trim()}
-            className="flex-1 py-2 bg-orange-500 text-white rounded-xl text-sm font-bold disabled:opacity-50">
+            className="flex-1 py-2 bg-[#1e3a5f] text-white rounded-xl text-sm font-bold disabled:opacity-50">
             {saving ? 'Salvando…' : 'Adicionar'}
           </button>
         </div>
@@ -262,7 +262,7 @@ export default function AtividadesSection({ obraId, isOwner }: { obraId: string;
                       {/* + sub */}
                       {isOwner && (
                         <button onClick={() => isAddSub ? cancelForm() : openAddSub(g.parent.id)}
-                          className="shrink-0 p-1.5 text-gray-300 hover:text-orange-400 hover:bg-orange-50 rounded-lg transition"
+                          className="shrink-0 p-1.5 text-gray-300 hover:text-[#2a5298] hover:bg-[#eef4fc] rounded-lg transition"
                           title="Adicionar sub-atividade">
                           <Plus size={13} />
                         </button>
@@ -321,7 +321,7 @@ export default function AtividadesSection({ obraId, isOwner }: { obraId: string;
                 <InlineForm />
               ) : (
                 <button onClick={() => { setShowAddForm(true); setAddingSubTo(null); setNewEtapa(''); setNewDesc('') }}
-                  className="w-full py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 font-medium hover:border-orange-300 hover:text-orange-500 transition flex items-center justify-center gap-1.5">
+                  className="w-full py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 font-medium hover:border-[#93b8e0] hover:text-[#1e3a5f] transition flex items-center justify-center gap-1.5">
                   <Plus size={15} /> Adicionar atividade
                 </button>
               )}
