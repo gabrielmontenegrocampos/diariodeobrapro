@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, UserPlus, Trash2, Clock, CheckCircle, Users } from 'lucide-react'
+import { ArrowLeft, UserPlus, Trash2, Clock, CheckCircle, Users, Copy, Check } from 'lucide-react'
 import Link from 'next/link'
 import AppBar from '@/components/AppBar'
 import { LoadingOverlay } from '@/components/LoadingOverlay'
@@ -26,6 +26,17 @@ export default function EquipePage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [ownerId, setOwnerId] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  const cadastroUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/login`
+    : 'https://diariodeobrapro.vercel.app/login'
+
+  function copyLink() {
+    navigator.clipboard.writeText(cadastroUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2500)
+  }
 
   useEffect(() => {
     async function load() {
@@ -84,7 +95,7 @@ export default function EquipePage() {
     })
 
     setEmail('')
-    setSuccess('Convite enviado! O membro deve se cadastrar com este e-mail.')
+    setSuccess(`Membro adicionado! Copie o link acima e envie para ${emailClean} se cadastrar.`)
     await loadMembers(ownerId)
     setLoading(false)
   }
@@ -109,11 +120,23 @@ export default function EquipePage() {
         </div>
 
         {/* Info */}
-        <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 mb-5">
+        <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 mb-5 space-y-3">
           <p className="text-sm text-orange-800 leading-relaxed">
-            Adicione membros pelo e-mail. Eles precisam se cadastrar no app com o mesmo e-mail para ter acesso às obras.
+            Adicione o e-mail do membro abaixo, depois envie o link de cadastro para ele entrar no app.
             Membros podem criar registros mas não podem editar ou excluir obras.
           </p>
+          <button
+            onClick={copyLink}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-orange-200 bg-white text-sm font-medium text-orange-600 hover:bg-orange-100 transition"
+          >
+            {copied ? <Check size={15} className="text-green-500" /> : <Copy size={15} />}
+            {copied ? 'Link copiado!' : 'Copiar link de cadastro'}
+          </button>
+          {copied && (
+            <p className="text-xs text-orange-700 text-center">
+              Envie pelo WhatsApp ou e-mail para o membro se cadastrar
+            </p>
+          )}
         </div>
 
         {/* Adicionar membro */}
