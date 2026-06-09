@@ -5,13 +5,21 @@ import './globals.css'
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
 
 export const metadata: Metadata = {
-  title: 'Diário de Obra',
+  title: 'Diário de Obra Pro',
   description: 'Registro diário de obras para profissionais',
   manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    title: 'Diário de Obra',
+    statusBarStyle: 'black-translucent',
+  },
+  icons: {
+    apple: '/apple-touch-icon.png',
+  },
 }
 
 export const viewport: Viewport = {
-  themeColor: '#f97316',
+  themeColor: '#1e3a5f',
   width: 'device-width',
   initialScale: 1,
 }
