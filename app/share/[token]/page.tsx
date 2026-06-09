@@ -51,7 +51,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
       .eq('obra_id', obra.id).order('data', { ascending: false }),
     supabase.from('empresas').select('*').eq('user_id', obra.user_id).maybeSingle(),
     supabase.from('atividades_obra')
-      .select('id, etapa, descricao, status, ordem')
+      .select('id, etapa, descricao, status, ordem, parent_id')
       .eq('obra_id', obra.id)
       .order('ordem', { ascending: true })
       .order('created_at', { ascending: true }),
@@ -68,10 +68,21 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
         .filter(Boolean).join(', ')
     : ''
 
-  const hasAtividades = atividades && atividades.length > 0
-  const concluidas = hasAtividades ? atividades.filter((a: any) => a.status === 'concluida').length : 0
-  const emAndamento = hasAtividades ? atividades.filter((a: any) => a.status === 'em_andamento').length : 0
-  const pendentes = hasAtividades ? atividades.length - concluidas - emAndamento : 0
+  // Build hierarchy for display
+  type AtvRaw = { id: string; etapa: string; descricao: string | null; status: string; ordem: number; parent_id: string | null }
+  const atvList: AtvRaw[] = (atividades as any[]) || []
+  const atvParents = atvList.filter(a => !a.parent_id).sort((a, b) => a.ordem - b.ordem)
+  const atvGroups = atvParents.map(p => ({
+    parent: p,
+    children: atvList.filter(a => a.parent_id === p.id).sort((a, b) => a.ordem - b.ordem),
+  }))
+  const svShare = (s: string) => s === 'concluida' ? 100 : s === 'em_andamento' ? 50 : 0
+  const gProgShare = (g: { parent: AtvRaw; children: AtvRaw[] }) =>
+    g.children.length
+      ? Math.round(g.children.reduce((a, c) => a + svShare(c.status), 0) / g.children.length)
+      : svShare(g.parent.status)
+  const hasAtividades = atvGroups.length > 0
+  const donePais = atvGroups.filter(g => gProgShare(g) === 100).length
   const progresso = obra.progresso_atual || 0
   const progColor = progresso < 30 ? '#ef4444' : progresso < 70 ? '#f97316' : '#22c55e'
 
@@ -172,7 +183,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
           <span>{registros?.length || 0} registro{registros?.length !== 1 ? 's' : ''}</span>
         </div>
 
-        {/* Atividades da Obra (read-only) */}
+        {/* Atividades da Obra (read-only, hierárquico) */}
         {hasAtividades && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             {/* Header */}
@@ -181,11 +192,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                 Atividades da Obra
               </p>
               <p className="text-xs text-gray-400">
-                {[
-                  concluidas > 0 && `${concluidas} concluída${concluidas !== 1 ? 's' : ''}`,
-                  emAndamento > 0 && `${emAndamento} em andamento`,
-                  pendentes > 0 && `${pendentes} pendente${pendentes !== 1 ? 's' : ''}`,
-                ].filter(Boolean).join(' · ')}
+                {donePais}/{atvGroups.length} etapa{atvGroups.length !== 1 ? 's' : ''} concluída{atvGroups.length !== 1 ? 's' : ''}
               </p>
             </div>
 
@@ -208,24 +215,50 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
               </div>
             )}
 
-            {/* List */}
-            <div className="border-t border-gray-50 divide-y divide-gray-50">
-              {(atividades as any[]).map((a: any, idx: number) => (
-                <div key={a.id} className="flex items-center gap-3 px-4 py-3">
-                  <span className="text-xs text-gray-300 font-mono w-4 shrink-0 text-right">{idx + 1}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium leading-snug ${a.status === 'concluida' ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-                      {a.etapa}
-                    </p>
-                    {a.descricao && (
-                      <p className="text-xs text-gray-400 mt-0.5 truncate">{a.descricao}</p>
-                    )}
+            {/* Hierarchical list */}
+            <div className="border-t border-gray-50">
+              {atvGroups.map((g, gi) => {
+                const gp = gProgShare(g)
+                const gClr = gp < 30 ? '#ef4444' : gp < 70 ? '#f97316' : '#22c55e'
+                return (
+                  <div key={g.parent.id} className="border-b border-gray-50 last:border-b-0">
+                    {/* Parent */}
+                    <div className="flex items-center gap-3 px-4 py-3">
+                      <span className="text-xs text-gray-300 font-mono w-4 shrink-0 text-right">{gi + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-semibold leading-snug ${gp === 100 ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+                          {g.parent.etapa}
+                        </p>
+                        {g.children.length > 0 && (
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${gp}%`, backgroundColor: gClr }} />
+                            </div>
+                            <span className="text-xs font-bold shrink-0" style={{ color: gClr }}>{gp}%</span>
+                          </div>
+                        )}
+                      </div>
+                      {g.children.length === 0 && (
+                        <span className={`shrink-0 text-xs px-2.5 py-1.5 rounded-xl font-semibold ${ATIV_CFG[g.parent.status as AtivStatus].cls}`}>
+                          {ATIV_CFG[g.parent.status as AtivStatus].label}
+                        </span>
+                      )}
+                    </div>
+                    {/* Children */}
+                    {g.children.map(child => (
+                      <div key={child.id} className="flex items-center gap-3 pl-11 pr-4 py-2.5 bg-gray-50/60 border-t border-gray-50">
+                        <span className="text-xs text-gray-300 shrink-0">└</span>
+                        <p className={`flex-1 text-xs font-medium ${child.status === 'concluida' ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                          {child.etapa}
+                        </p>
+                        <span className={`shrink-0 text-xs px-2 py-1 rounded-lg font-semibold ${ATIV_CFG[child.status as AtivStatus].cls}`}>
+                          {ATIV_CFG[child.status as AtivStatus].label}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                  <span className={`shrink-0 text-xs px-2.5 py-1.5 rounded-xl font-semibold ${ATIV_CFG[a.status as AtivStatus].cls}`}>
-                    {ATIV_CFG[a.status as AtivStatus].label}
-                  </span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
