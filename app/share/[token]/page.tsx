@@ -5,6 +5,7 @@ import { HardHat, MapPin, Calendar, Users, AlertTriangle, Phone, Mail } from 'lu
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import PhotoGallery from '@/components/PhotoGallery'
+import ShareCollapsible from '@/components/ShareCollapsible'
 
 const climaIcon: Record<string, string> = {
   sol: '☀️', nublado: '🌤️', chuva: '🌧️', tempestade: '⛈️', ventoso: '💨',
@@ -12,25 +13,25 @@ const climaIcon: Record<string, string> = {
 const severidadeColor: Record<string, string> = {
   baixa: 'bg-blue-50 text-blue-600 border border-blue-200',
   media: 'bg-yellow-50 text-yellow-700 border border-yellow-200',
-  alta: 'bg-red-50 text-red-600 border border-red-200',
+  alta:  'bg-red-50 text-red-600 border border-red-200',
 }
 
 type AtivStatus = 'pendente' | 'em_andamento' | 'concluida'
 const ATIV_CFG: Record<AtivStatus, { label: string; cls: string }> = {
-  pendente:     { label: 'Pendente',      cls: 'bg-gray-100 text-gray-500' },
-  em_andamento: { label: 'Em andamento',  cls: 'bg-orange-100 text-orange-700' },
-  concluida:    { label: 'Concluída ✓',   cls: 'bg-green-100 text-green-700' },
+  pendente:     { label: 'Pendente',     cls: 'bg-gray-100 text-gray-500' },
+  em_andamento: { label: 'Em andamento', cls: 'bg-orange-100 text-orange-700' },
+  concluida:    { label: 'Concluída ✓',  cls: 'bg-green-100 text-green-700' },
 }
 
 const DOC_TIPOS = [
-  { value: 'art',      label: 'ART / RRT',  icon: '📋' },
-  { value: 'seguro',   label: 'Seguro',      icon: '🛡️' },
-  { value: 'contrato', label: 'Contrato',    icon: '📝' },
-  { value: 'planta',   label: 'Planta',      icon: '📐' },
-  { value: 'outro',    label: 'Outro',       icon: '📄' },
+  { value: 'art',      label: 'ART / RRT', icon: '📋' },
+  { value: 'seguro',   label: 'Seguro',     icon: '🛡️' },
+  { value: 'contrato', label: 'Contrato',   icon: '📝' },
+  { value: 'planta',   label: 'Planta',     icon: '📐' },
+  { value: 'outro',    label: 'Outro',      icon: '📄' },
 ]
-function docIcon(tipo: string)  { return DOC_TIPOS.find(t => t.value === tipo)?.icon  || '📄' }
-function docLabel(tipo: string) { return DOC_TIPOS.find(t => t.value === tipo)?.label || 'Outro' }
+function docIcon(t: string)  { return DOC_TIPOS.find(x => x.value === t)?.icon  || '📄' }
+function docLabel(t: string) { return DOC_TIPOS.find(x => x.value === t)?.label || 'Outro' }
 function fmtBytes(b: number) {
   if (b < 1024)        return `${b} B`
   if (b < 1024 * 1024) return `${Math.round(b / 1024)} KB`
@@ -39,27 +40,26 @@ function fmtBytes(b: number) {
 
 export default async function SharePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
-  const supabase = createServiceClient()
+  const supabase  = createServiceClient()
 
   const { data: obra } = await supabase
     .from('obras').select('*').eq('share_token', token).single()
   if (!obra) notFound()
 
-  const [{ data: registros }, { data: empresa }, { data: atividades }, { data: documentos }] = await Promise.all([
-    supabase.from('registros')
-      .select('*, fotos(*), equipe_dia(*), ocorrencias(*)')
-      .eq('obra_id', obra.id).order('data', { ascending: false }),
-    supabase.from('empresas').select('*').eq('user_id', obra.user_id).maybeSingle(),
-    supabase.from('atividades_obra')
-      .select('id, etapa, descricao, status, ordem, parent_id')
-      .eq('obra_id', obra.id)
-      .order('ordem', { ascending: true })
-      .order('created_at', { ascending: true }),
-    supabase.from('documentos_obra')
-      .select('id, tipo, arquivo_url, arquivo_nome, tamanho')
-      .eq('obra_id', obra.id)
-      .order('created_at', { ascending: false }),
-  ])
+  const [{ data: registros }, { data: empresa }, { data: atividades }, { data: documentos }] =
+    await Promise.all([
+      supabase.from('registros')
+        .select('*, fotos(*), equipe_dia(*), ocorrencias(*)')
+        .eq('obra_id', obra.id).order('data', { ascending: false }),
+      supabase.from('empresas').select('*').eq('user_id', obra.user_id).maybeSingle(),
+      supabase.from('atividades_obra')
+        .select('id, etapa, descricao, status, ordem, parent_id')
+        .eq('obra_id', obra.id)
+        .order('ordem', { ascending: true }).order('created_at', { ascending: true }),
+      supabase.from('documentos_obra')
+        .select('id, tipo, arquivo_url, arquivo_nome, tamanho')
+        .eq('obra_id', obra.id).order('created_at', { ascending: false }),
+    ])
 
   const enderecoObra = [obra.logradouro, obra.numero, obra.bairro, obra.cidade, obra.estado]
     .filter(Boolean).join(', ') || obra.endereco || ''
@@ -68,33 +68,31 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
         .filter(Boolean).join(', ')
     : ''
 
-  // Build hierarchy for display
+  // Build activities hierarchy
   type AtvRaw = { id: string; etapa: string; descricao: string | null; status: string; ordem: number; parent_id: string | null }
   const atvList: AtvRaw[] = (atividades as any[]) || []
-  const atvParents = atvList.filter(a => !a.parent_id).sort((a, b) => a.ordem - b.ordem)
-  const atvGroups = atvParents.map(p => ({
-    parent: p,
-    children: atvList.filter(a => a.parent_id === p.id).sort((a, b) => a.ordem - b.ordem),
-  }))
-  const svShare = (s: string) => s === 'concluida' ? 100 : s === 'em_andamento' ? 50 : 0
-  const gProgShare = (g: { parent: AtvRaw; children: AtvRaw[] }) =>
+  const atvGroups = atvList
+    .filter(a => !a.parent_id).sort((a, b) => a.ordem - b.ordem)
+    .map(p => ({ parent: p, children: atvList.filter(a => a.parent_id === p.id).sort((a, b) => a.ordem - b.ordem) }))
+  const svS = (s: string) => s === 'concluida' ? 100 : s === 'em_andamento' ? 50 : 0
+  const gPrg = (g: { parent: AtvRaw; children: AtvRaw[] }) =>
     g.children.length
-      ? Math.round(g.children.reduce((a, c) => a + svShare(c.status), 0) / g.children.length)
-      : svShare(g.parent.status)
-  const hasAtividades = atvGroups.length > 0
-  const donePais = atvGroups.filter(g => gProgShare(g) === 100).length
-  const progresso = obra.progresso_atual || 0
-  const progColor = progresso < 30 ? '#ef4444' : progresso < 70 ? '#f97316' : '#22c55e'
+      ? Math.round(g.children.reduce((a, c) => a + svS(c.status), 0) / g.children.length)
+      : svS(g.parent.status)
+
+  const progresso   = obra.progresso_atual || 0
+  const progColor   = progresso < 30 ? '#ef4444' : progresso < 70 ? '#f97316' : '#22c55e'
+  const donePais    = atvGroups.filter(g => gPrg(g) === 100).length
+  const hasAtiv     = atvGroups.length > 0
+  const hasDocs     = documentos && documentos.length > 0
 
   return (
     <div className="min-h-screen bg-gray-50">
 
-      {/* Cabeçalho laranja */}
+      {/* Orange header */}
       <div className="bg-orange-500 text-white px-4 py-5">
         <div className="max-w-lg mx-auto flex items-center gap-3">
-          <div className="bg-white/20 p-2.5 rounded-2xl shrink-0">
-            <HardHat size={24} />
-          </div>
+          <div className="bg-white/20 p-2.5 rounded-2xl shrink-0"><HardHat size={24} /></div>
           <div className="min-w-0 flex-1">
             <p className="text-xs text-orange-100 font-medium tracking-wide">Diário de Obra</p>
             <h1 className="text-xl font-bold leading-tight truncate">{obra.nome}</h1>
@@ -110,8 +108,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                   <span className="text-xs font-bold text-white">{progresso}%</span>
                 </div>
                 <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-white rounded-full transition-all duration-500"
-                    style={{ width: `${progresso}%` }} />
+                  <div className="h-full bg-white rounded-full" style={{ width: `${progresso}%` }} />
                 </div>
               </div>
             )}
@@ -121,7 +118,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
 
       <div className="max-w-lg mx-auto px-4 py-5 space-y-4">
 
-        {/* Dados da empresa/prestador */}
+        {/* Company card */}
         {empresa?.razao_social && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="flex items-center gap-3 p-4">
@@ -136,9 +133,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
               )}
               <div className="min-w-0 flex-1">
                 <p className="font-bold text-gray-900 text-sm leading-tight">{empresa.razao_social}</p>
-                {empresa.nome_fantasia && (
-                  <p className="text-xs text-gray-500">{empresa.nome_fantasia}</p>
-                )}
+                {empresa.nome_fantasia && <p className="text-xs text-gray-500">{empresa.nome_fantasia}</p>}
                 {empresa.cpf_cnpj && (
                   <p className="text-xs text-gray-400 mt-0.5">
                     {empresa.tipo === 'juridica' ? 'CNPJ' : 'CPF'}: {empresa.cpf_cnpj}
@@ -156,14 +151,12 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                 )}
                 {empresa.email && (
                   <p className="text-xs text-gray-600 flex items-center gap-1.5">
-                    <Mail size={11} className="text-gray-400 shrink-0" />
-                    {empresa.email}
+                    <Mail size={11} className="text-gray-400 shrink-0" />{empresa.email}
                   </p>
                 )}
                 {enderecoEmpresa && (
                   <p className="text-xs text-gray-500 flex items-start gap-1.5">
-                    <MapPin size={11} className="text-gray-400 shrink-0 mt-0.5" />
-                    {enderecoEmpresa}
+                    <MapPin size={11} className="text-gray-400 shrink-0 mt-0.5" />{enderecoEmpresa}
                   </p>
                 )}
               </div>
@@ -171,7 +164,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
           </div>
         )}
 
-        {/* Stats */}
+        {/* Stats row */}
         <div className="flex items-center gap-3 text-sm text-gray-500">
           {obra.data_inicio && (
             <span className="flex items-center gap-1.5">
@@ -183,50 +176,44 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
           <span>{registros?.length || 0} registro{registros?.length !== 1 ? 's' : ''}</span>
         </div>
 
-        {/* Atividades da Obra (read-only, hierárquico) */}
-        {hasAtividades && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            {/* Header */}
-            <div className="px-4 pt-4 pb-3">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
-                Atividades da Obra
-              </p>
-              <p className="text-xs text-gray-400">
-                {donePais}/{atvGroups.length} etapa{atvGroups.length !== 1 ? 's' : ''} concluída{atvGroups.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-
-            {/* Progress bar */}
-            {progresso > 0 && (
-              <div className="px-4 pb-3">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs text-gray-400">Avanço físico</span>
-                  <span className="text-2xl font-bold" style={{ color: progColor }}>{progresso}%</span>
-                </div>
-                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${progresso}%`, backgroundColor: progColor }} />
-                </div>
-                {obra.data_previsao_fim && (
-                  <p className="text-xs text-gray-400 mt-1.5">
-                    Previsão de conclusão: {format(parseISO(obra.data_previsao_fim), "dd/MM/yyyy")}
-                  </p>
+        {/* ── Atividades (collapsible) ── */}
+        {hasAtiv && (
+          <ShareCollapsible
+            header={
+              <div>
+                <p className="text-sm font-bold text-gray-800">Atividades da Obra</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {donePais}/{atvGroups.length} etapa{atvGroups.length !== 1 ? 's' : ''} concluída{atvGroups.length !== 1 ? 's' : ''}
+                </p>
+                {progresso > 0 && (
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs text-gray-400">Avanço físico</span>
+                      <span className="text-lg font-bold" style={{ color: progColor }}>{progresso}%</span>
+                    </div>
+                    <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${progresso}%`, backgroundColor: progColor }} />
+                    </div>
+                    {obra.data_previsao_fim && (
+                      <p className="text-xs text-gray-400 mt-1.5">
+                        Previsão de conclusão: {format(parseISO(obra.data_previsao_fim), "dd/MM/yyyy")}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-
-            {/* Hierarchical list */}
-            <div className="border-t border-gray-50">
+            }
+          >
+            <div className="divide-y divide-gray-50">
               {atvGroups.map((g, gi) => {
-                const gp = gProgShare(g)
+                const gp   = gPrg(g)
                 const gClr = gp < 30 ? '#ef4444' : gp < 70 ? '#f97316' : '#22c55e'
                 return (
-                  <div key={g.parent.id} className="border-b border-gray-50 last:border-b-0">
-                    {/* Parent */}
+                  <div key={g.parent.id}>
                     <div className="flex items-center gap-3 px-4 py-3">
                       <span className="text-xs text-gray-300 font-mono w-4 shrink-0 text-right">{gi + 1}</span>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-semibold leading-snug ${gp === 100 ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+                        <p className={`text-sm font-semibold ${gp === 100 ? 'line-through text-gray-400' : 'text-gray-800'}`}>
                           {g.parent.etapa}
                         </p>
                         {g.children.length > 0 && (
@@ -244,9 +231,10 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                         </span>
                       )}
                     </div>
-                    {/* Children */}
                     {g.children.map(child => (
-                      <div key={child.id} className="flex items-center gap-3 pl-11 pr-4 py-2.5 bg-gray-50/60 border-t border-gray-50">
+                      <div key={child.id}
+                        className="flex items-center gap-3 pl-11 pr-4 py-2.5 border-t border-gray-50"
+                        style={{ backgroundColor: '#f0f1f2' }}>
                         <span className="text-xs text-gray-300 shrink-0">└</span>
                         <p className={`flex-1 text-xs font-medium ${child.status === 'concluida' ? 'line-through text-gray-400' : 'text-gray-700'}`}>
                           {child.etapa}
@@ -260,18 +248,42 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                 )
               })}
             </div>
+          </ShareCollapsible>
+        )}
+
+        {/* Fallback progress (no activities) */}
+        {!hasAtiv && progresso > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Avanço físico</p>
+                {obra.data_previsao_fim && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Previsão: {format(parseISO(obra.data_previsao_fim), "dd/MM/yyyy")}
+                  </p>
+                )}
+              </div>
+              <span className="text-3xl font-bold" style={{ color: progColor }}>{progresso}%</span>
+            </div>
+            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full" style={{ width: `${progresso}%`, backgroundColor: progColor }} />
+            </div>
           </div>
         )}
 
-        {/* Documentos (read-only) */}
-        {documentos && documentos.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-4 pt-4 pb-3">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                Documentos da Obra
-              </p>
-            </div>
-            <div className="border-t border-gray-50 divide-y divide-gray-50">
+        {/* ── Documentos (collapsible) ── */}
+        {hasDocs && (
+          <ShareCollapsible
+            header={
+              <div>
+                <p className="text-sm font-bold text-gray-800">Documentos da Obra</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {(documentos as any[]).length} arquivo{(documentos as any[]).length !== 1 ? 's' : ''}
+                </p>
+              </div>
+            }
+          >
+            <div className="divide-y divide-gray-50">
               {(documentos as any[]).map((doc: any) => (
                 <div key={doc.id} className="flex items-center gap-3 px-4 py-3">
                   <span className="text-xl shrink-0">{docIcon(doc.tipo)}</span>
@@ -281,42 +293,14 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                       {docLabel(doc.tipo)}{doc.tamanho ? ` · ${fmtBytes(doc.tamanho)}` : ''}
                     </p>
                   </div>
-                  <a
-                    href={doc.arquivo_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shrink-0 flex items-center gap-1.5 text-xs text-orange-500 font-semibold bg-orange-50 px-3 py-1.5 rounded-xl hover:bg-orange-100 transition"
-                  >
+                  <a href={doc.arquivo_url} target="_blank" rel="noopener noreferrer"
+                    className="shrink-0 flex items-center gap-1.5 text-xs text-orange-500 font-semibold bg-orange-50 px-3 py-1.5 rounded-xl hover:bg-orange-100 transition">
                     ⬇ Baixar
                   </a>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Fallback: barra de progresso sem atividades */}
-        {!hasAtividades && progresso > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Avanço físico da obra</p>
-                {obra.data_previsao_fim && (
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Previsão de conclusão: {format(parseISO(obra.data_previsao_fim), "dd/MM/yyyy")}
-                  </p>
-                )}
-              </div>
-              <span className="text-3xl font-bold" style={{ color: progColor }}>{progresso}%</span>
-            </div>
-            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${progresso}%`, backgroundColor: progColor }} />
-            </div>
-            <div className="flex justify-between text-xs text-gray-300 mt-1">
-              <span>0%</span><span>50%</span><span>100%</span>
-            </div>
-          </div>
+          </ShareCollapsible>
         )}
 
         {/* Registros */}
@@ -326,7 +310,6 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
           <div className="space-y-4">
             {registros.map((reg: any) => (
               <div key={reg.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-
                 <div className="px-4 pt-4 pb-3 flex items-center justify-between">
                   <span className="font-bold text-gray-900 text-sm capitalize">
                     {format(parseISO(reg.data), "EEEE, dd 'de' MMMM", { locale: ptBR })}
@@ -337,7 +320,6 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                     </span>
                   )}
                 </div>
-
                 <div className="px-4 pb-4 space-y-3">
                   {reg.servicos_executados && (
                     <div>
@@ -345,15 +327,10 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                       <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{reg.servicos_executados}</p>
                     </div>
                   )}
-
                   {reg.descricao && (
                     <p className="text-sm text-gray-700 leading-relaxed">{reg.descricao}</p>
                   )}
-
-                  {reg.fotos?.length > 0 && (
-                    <PhotoGallery fotos={reg.fotos} />
-                  )}
-
+                  {reg.fotos?.length > 0 && <PhotoGallery fotos={reg.fotos} />}
                   {reg.equipe_dia?.length > 0 && (
                     <div>
                       <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
@@ -368,7 +345,6 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                       </div>
                     </div>
                   )}
-
                   {reg.ocorrencias?.length > 0 && (
                     <div>
                       <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">

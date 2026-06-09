@@ -22,6 +22,7 @@ const S = {
 
 const sv  = (s: string) => s === 'concluida' ? 100 : s === 'em_andamento' ? 50 : 0
 const clr = (p: number) => p < 30 ? '#ef4444' : p < 70 ? '#f97316' : '#22c55e'
+const SUB_BG = '#f0f1f2'
 
 function gProg(g: Group) {
   if (!g.children.length) return sv(g.parent.status)
@@ -39,15 +40,13 @@ function buildGroups(list: Atividade[]): Group[] {
   }))
 }
 
-// ~5% more grey than bg-gray-50 (#f9fafb)
-const SUB_BG = '#f0f1f2'
-
 export default function AtividadesSection({ obraId, isOwner }: { obraId: string; isOwner: boolean }) {
   const supabase = createClient()
 
   const [all,          setAll]          = useState<Atividade[]>([])
-  const [expanded,     setExpanded]     = useState<Set<string>>(new Set())
-  const [showAddForm,  setShowAddForm]  = useState(false)   // bottom "add parent" form
+  const [sectionOpen,  setSectionOpen]  = useState(false)   // whole section
+  const [expanded,     setExpanded]     = useState<Set<string>>(new Set()) // per-parent
+  const [showAddForm,  setShowAddForm]  = useState(false)
   const [addingSubTo,  setAddingSubTo]  = useState<string | null>(null)
   const [newEtapa,     setNewEtapa]     = useState('')
   const [newDesc,      setNewDesc]      = useState('')
@@ -78,9 +77,7 @@ export default function AtividadesSection({ obraId, isOwner }: { obraId: string;
   async function addActivity(parentId?: string) {
     if (!newEtapa.trim()) return
     setSaving(true)
-    const siblings = parentId
-      ? all.filter(a => a.parent_id === parentId)
-      : all.filter(a => !a.parent_id)
+    const siblings = parentId ? all.filter(a => a.parent_id === parentId) : all.filter(a => !a.parent_id)
     const { data, error } = await supabase
       .from('atividades_obra')
       .insert({ obra_id: obraId, etapa: newEtapa.trim(), descricao: newDesc.trim() || null,
@@ -119,16 +116,10 @@ export default function AtividadesSection({ obraId, isOwner }: { obraId: string;
   function toggleExpand(id: string) {
     setExpanded(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
   }
-
-  function openAddParent() {
-    setShowAddForm(true); setAddingSubTo(null); setNewEtapa(''); setNewDesc('')
-  }
-
   function openAddSub(parentId: string) {
     setAddingSubTo(parentId); setShowAddForm(false); setNewEtapa(''); setNewDesc('')
-    setExpanded(prev => new Set([...prev, parentId])) // auto-expand
+    setExpanded(prev => new Set([...prev, parentId]))
   }
-
   function cancelForm() {
     setShowAddForm(false); setAddingSubTo(null); setNewEtapa(''); setNewDesc('')
   }
@@ -139,8 +130,7 @@ export default function AtividadesSection({ obraId, isOwner }: { obraId: string;
         <input type="text" value={newEtapa} onChange={e => setNewEtapa(e.target.value)}
           placeholder={parentId ? 'Nome da sub-atividade *' : 'Nome da atividade *'}
           className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && addActivity(parentId)}
-          autoFocus />
+          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && addActivity(parentId)} autoFocus />
         <input type="text" value={newDesc} onChange={e => setNewDesc(e.target.value)}
           placeholder="Descrição (opcional)"
           className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
@@ -161,138 +151,134 @@ export default function AtividadesSection({ obraId, isOwner }: { obraId: string;
   const groups = buildGroups(all)
   const prog   = totalProg(groups)
   const done   = groups.filter(g => gProg(g) === 100).length
+  const pClr   = clr(prog)
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
-      {/* Header */}
-      <div className="px-4 pt-4 pb-3">
-        <h2 className="text-sm font-bold text-gray-800">Atividades da Obra</h2>
+      {/* ── Collapsed header (always visible, tap to toggle) ── */}
+      <button
+        type="button"
+        onClick={() => setSectionOpen(v => !v)}
+        className="w-full px-4 pt-4 pb-3 text-left"
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1">
+            <h2 className="text-sm font-bold text-gray-800">Atividades da Obra</h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {groups.length === 0
+                ? 'Nenhuma atividade cadastrada'
+                : `${done}/${groups.length} etapa${groups.length !== 1 ? 's' : ''} concluída${groups.length !== 1 ? 's' : ''}`}
+            </p>
+          </div>
+          <ChevronDown
+            size={16}
+            className={`text-gray-400 shrink-0 mt-0.5 transition-transform duration-200 ${sectionOpen ? 'rotate-180' : ''}`}
+          />
+        </div>
+
+        {/* Progress bar — always visible */}
         {groups.length > 0 && (
-          <p className="text-xs text-gray-400 mt-0.5">
-            {done}/{groups.length} etapa{groups.length !== 1 ? 's' : ''} concluída{groups.length !== 1 ? 's' : ''}
-          </p>
+          <div className="mt-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs text-gray-400">Avanço físico total</span>
+              <span className="text-sm font-bold" style={{ color: pClr }}>{prog}%</span>
+            </div>
+            <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${prog}%`, backgroundColor: pClr }} />
+            </div>
+          </div>
         )}
-      </div>
+      </button>
 
-      {/* Overall progress */}
-      {groups.length > 0 && (
-        <div className="px-4 pb-3">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs text-gray-400">Avanço físico total</span>
-            <span className="text-sm font-bold" style={{ color: clr(prog) }}>{prog}%</span>
-          </div>
-          <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${prog}%`, backgroundColor: clr(prog) }} />
-          </div>
-        </div>
-      )}
+      {/* ── Expanded content ── */}
+      {sectionOpen && (
+        <>
+          {/* Groups */}
+          {groups.length > 0 && (
+            <div className="border-t border-gray-100">
+              {groups.map((g, gi) => {
+                const gp       = gProg(g)
+                const hasKids  = g.children.length > 0
+                const isExp    = expanded.has(g.parent.id)
+                const isAddSub = addingSubTo === g.parent.id
 
-      {/* Empty state */}
-      {groups.length === 0 && (
-        <div className="px-4 pb-2 text-center">
-          <p className="text-sm text-gray-400">
-            {isOwner ? 'Cadastre as etapas do contrato abaixo' : 'Nenhuma atividade cadastrada'}
-          </p>
-        </div>
-      )}
-
-      {/* Groups */}
-      {groups.length > 0 && (
-        <div className="border-t border-gray-100">
-          {groups.map((g, gi) => {
-            const gp         = gProg(g)
-            const hasKids    = g.children.length > 0
-            const isExp      = expanded.has(g.parent.id)
-            const isAddSub   = addingSubTo === g.parent.id
-
-            return (
-              <div key={g.parent.id} className="border-b border-gray-50 last:border-b-0">
-
-                {/* Parent row */}
-                <div className="flex items-center gap-1.5 px-3 py-3">
-
-                  {/* Chevron expand/collapse */}
-                  <button
-                    onClick={() => hasKids && toggleExpand(g.parent.id)}
-                    className={`shrink-0 w-5 h-5 flex items-center justify-center rounded transition-colors ${hasKids ? 'text-gray-400 hover:text-gray-600' : 'text-transparent pointer-events-none'}`}
-                  >
-                    <ChevronRight size={14}
-                      className={`transition-transform duration-200 ${isExp ? 'rotate-90' : ''}`} />
-                  </button>
-
-                  {/* Reorder ↑↓ */}
-                  {isOwner && (
-                    <div className="flex flex-col shrink-0">
-                      <button onClick={() => moveParent(gi, -1)} disabled={gi === 0}
-                        className="p-0.5 text-gray-200 hover:text-gray-500 disabled:opacity-20 transition">
-                        <ChevronUp size={13} />
+                return (
+                  <div key={g.parent.id} className="border-b border-gray-50 last:border-b-0">
+                    {/* Parent row */}
+                    <div className="flex items-center gap-1.5 px-3 py-3">
+                      {/* Chevron */}
+                      <button
+                        onClick={() => hasKids && toggleExpand(g.parent.id)}
+                        className={`shrink-0 w-5 h-5 flex items-center justify-center rounded transition-colors
+                          ${hasKids ? 'text-gray-400 hover:text-gray-600' : 'text-transparent pointer-events-none'}`}
+                      >
+                        <ChevronRight size={14}
+                          className={`transition-transform duration-200 ${isExp ? 'rotate-90' : ''}`} />
                       </button>
-                      <button onClick={() => moveParent(gi, 1)} disabled={gi === groups.length - 1}
-                        className="p-0.5 text-gray-200 hover:text-gray-500 disabled:opacity-20 transition">
-                        <ChevronDown size={13} />
-                      </button>
-                    </div>
-                  )}
 
-                  {/* Index */}
-                  <span className="text-xs text-gray-300 font-mono w-4 text-right shrink-0 select-none">
-                    {gi + 1}
-                  </span>
-
-                  {/* Name + mini bar — clickable to toggle */}
-                  <div className="flex-1 min-w-0 cursor-pointer"
-                    onClick={() => hasKids && toggleExpand(g.parent.id)}>
-                    <p className={`text-sm font-semibold leading-snug ${gp === 100 ? 'line-through text-gray-400' : 'text-gray-800'}`}>
-                      {g.parent.etapa}
-                    </p>
-                    {g.parent.descricao && !hasKids && (
-                      <p className="text-xs text-gray-400 truncate mt-0.5">{g.parent.descricao}</p>
-                    )}
-                    {hasKids && (
-                      <div className="flex items-center gap-2 mt-1.5">
-                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full transition-all"
-                            style={{ width: `${gp}%`, backgroundColor: clr(gp) }} />
+                      {/* ↑↓ reorder */}
+                      {isOwner && (
+                        <div className="flex flex-col shrink-0">
+                          <button onClick={() => moveParent(gi, -1)} disabled={gi === 0}
+                            className="p-0.5 text-gray-200 hover:text-gray-500 disabled:opacity-20 transition">
+                            <ChevronUp size={13} />
+                          </button>
+                          <button onClick={() => moveParent(gi, 1)} disabled={gi === groups.length - 1}
+                            className="p-0.5 text-gray-200 hover:text-gray-500 disabled:opacity-20 transition">
+                            <ChevronDown size={13} />
+                          </button>
                         </div>
-                        <span className="text-xs font-bold shrink-0" style={{ color: clr(gp) }}>
-                          {gp}%
-                        </span>
+                      )}
+
+                      <span className="text-xs text-gray-300 font-mono w-4 text-right shrink-0 select-none">{gi + 1}</span>
+
+                      {/* Name + mini bar */}
+                      <div className="flex-1 min-w-0 cursor-pointer"
+                        onClick={() => hasKids && toggleExpand(g.parent.id)}>
+                        <p className={`text-sm font-semibold leading-snug ${gp === 100 ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+                          {g.parent.etapa}
+                        </p>
+                        {hasKids && (
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full transition-all"
+                                style={{ width: `${gp}%`, backgroundColor: clr(gp) }} />
+                            </div>
+                            <span className="text-xs font-bold shrink-0" style={{ color: clr(gp) }}>{gp}%</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  {/* Status badge (leaf only) */}
-                  {!hasKids && (
-                    <button onClick={() => updateStatus(g.parent.id, g.parent.status)}
-                      className={`shrink-0 text-xs px-2.5 py-1.5 rounded-xl font-semibold transition active:scale-95 ${S[g.parent.status].cls}`}>
-                      {S[g.parent.status].label}
-                    </button>
-                  )}
+                      {/* Status badge (leaf only) */}
+                      {!hasKids && (
+                        <button onClick={() => updateStatus(g.parent.id, g.parent.status)}
+                          className={`shrink-0 text-xs px-2.5 py-1.5 rounded-xl font-semibold transition active:scale-95 ${S[g.parent.status].cls}`}>
+                          {S[g.parent.status].label}
+                        </button>
+                      )}
 
-                  {/* + sub */}
-                  {isOwner && (
-                    <button onClick={() => isAddSub ? cancelForm() : openAddSub(g.parent.id)}
-                      className="shrink-0 p-1.5 text-gray-300 hover:text-orange-400 hover:bg-orange-50 rounded-lg transition"
-                      title="Adicionar sub-atividade">
-                      <Plus size={13} />
-                    </button>
-                  )}
+                      {/* + sub */}
+                      {isOwner && (
+                        <button onClick={() => isAddSub ? cancelForm() : openAddSub(g.parent.id)}
+                          className="shrink-0 p-1.5 text-gray-300 hover:text-orange-400 hover:bg-orange-50 rounded-lg transition"
+                          title="Adicionar sub-atividade">
+                          <Plus size={13} />
+                        </button>
+                      )}
 
-                  {/* Delete */}
-                  {isOwner && (
-                    <button onClick={() => deleteActivity(g.parent.id)}
-                      className="shrink-0 text-gray-200 hover:text-red-400 transition p-1">
-                      <Trash2 size={13} />
-                    </button>
-                  )}
-                </div>
+                      {/* Delete */}
+                      {isOwner && (
+                        <button onClick={() => deleteActivity(g.parent.id)}
+                          className="shrink-0 text-gray-200 hover:text-red-400 transition p-1">
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
 
-                {/* Sub-activities (collapsible) */}
-                {isExp && (
-                  <>
-                    {g.children.map(child => (
+                    {/* Sub-activities */}
+                    {isExp && g.children.map(child => (
                       <div key={child.id}
                         className="flex items-center gap-2 pl-12 pr-3 py-2.5 border-t border-gray-100"
                         style={{ backgroundColor: SUB_BG }}>
@@ -301,9 +287,6 @@ export default function AtividadesSection({ obraId, isOwner }: { obraId: string;
                           <p className={`text-xs font-medium ${child.status === 'concluida' ? 'line-through text-gray-400' : 'text-gray-700'}`}>
                             {child.etapa}
                           </p>
-                          {child.descricao && (
-                            <p className="text-xs text-gray-400 truncate mt-0.5">{child.descricao}</p>
-                          )}
                         </div>
                         <button onClick={() => updateStatus(child.id, child.status)}
                           className={`shrink-0 text-xs px-2 py-1 rounded-lg font-semibold transition active:scale-95 ${S[child.status].cls}`}>
@@ -325,34 +308,26 @@ export default function AtividadesSection({ obraId, isOwner }: { obraId: string;
                         <InlineForm parentId={g.parent.id} />
                       </div>
                     )}
-                  </>
-                )}
-
-                {/* Add sub form when collapsed but triggered */}
-                {!isExp && isAddSub && isOwner && (
-                  <div className="pl-12 pr-3 pb-3 pt-1 border-t border-gray-100"
-                    style={{ backgroundColor: SUB_BG }}>
-                    <InlineForm parentId={g.parent.id} />
                   </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Bottom: add parent form or button */}
-      {isOwner && (
-        <div className="px-4 py-3 border-t border-gray-50">
-          {showAddForm ? (
-            <InlineForm />
-          ) : (
-            <button onClick={openAddParent}
-              className="w-full py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 font-medium hover:border-orange-300 hover:text-orange-500 transition flex items-center justify-center gap-1.5">
-              <Plus size={15} /> Adicionar atividade
-            </button>
+                )
+              })}
+            </div>
           )}
-        </div>
+
+          {/* Bottom add button */}
+          {isOwner && (
+            <div className="px-4 py-3 border-t border-gray-50">
+              {showAddForm ? (
+                <InlineForm />
+              ) : (
+                <button onClick={() => { setShowAddForm(true); setAddingSubTo(null); setNewEtapa(''); setNewDesc('') }}
+                  className="w-full py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 font-medium hover:border-orange-300 hover:text-orange-500 transition flex items-center justify-center gap-1.5">
+                  <Plus size={15} /> Adicionar atividade
+                </button>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   )
