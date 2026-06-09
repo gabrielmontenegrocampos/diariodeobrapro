@@ -123,25 +123,25 @@ export default function NovoRegistroPage({ params }: { params: Promise<{ id: str
       const tarefas: Promise<any>[] = [...fotoPromises]
 
       if (equipeValida.length > 0) {
-        tarefas.push(supabase.from('equipe_dia').insert(
+        tarefas.push((async () => supabase.from('equipe_dia').insert(
           equipeValida.map(w => ({
             registro_id: registro.id,
             nome: w.nome,
             funcao: w.funcao || null,
             horas: w.horas ? parseFloat(w.horas) : null,
           }))
-        ))
+        ))())
       }
 
       if (ocorrValidas.length > 0) {
-        tarefas.push(supabase.from('ocorrencias').insert(
+        tarefas.push((async () => supabase.from('ocorrencias').insert(
           ocorrValidas.map(o => ({
             registro_id: registro.id,
             descricao: o.descricao,
             tipo: o.tipo,
             severidade: o.severidade,
           }))
-        ))
+        ))())
       }
 
       await Promise.all(tarefas)
